@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Usuzumi Components</title>
-  <link rel="stylesheet" href="../node_modules/usuzumi/ui/usuzumi.css">
-  <link rel="stylesheet" href="../node_modules/usuzumi/ui/usuzumi-signature.css">
-  <script src="../node_modules/usuzumi/ui/usuzumi.js" defer></script>
-  <link rel="stylesheet" href="assets/components.css">
+  <link rel="stylesheet" href="./node_modules/usuzumi/ui/usuzumi.css">
+  <link rel="stylesheet" href="./node_modules/usuzumi/ui/usuzumi-signature.css">
+  <script src="./node_modules/usuzumi/ui/usuzumi.js" defer></script>
+  <link rel="stylesheet" href="components/assets/components.css">
 </head>
 <body class="uzu-app">
   <div class="uzu-floating-controls" aria-label="Page settings">
@@ -26,10 +26,10 @@
     <header class="uzu-topbar uzu-doc-topbar">
       <span class="uzu-brand-link uzu-doc-brand" style="--uzu-doc-brand-size: 18px">Usuzumi</span>
       <nav class="uzu-nav" aria-label="Site navigation">
-        <a href="../index.html"><span data-lang="zh">首页</span><span data-lang="en">Home</span></a>
-        <a href="index.html" aria-current="page"><span data-lang="zh">组件</span><span data-lang="en">Components</span></a>
+        <a href="index.html"><span data-lang="zh">首页</span><span data-lang="en">Home</span></a>
+        <a href="components.html" aria-current="page"><span data-lang="zh">组件</span><span data-lang="en">Components</span></a>
         <a href="#component-page"><span data-lang="zh">文档</span><span data-lang="en">Docs</span></a>
-        <a href="../editor-integration.html"><span data-lang="zh">编辑器接入</span><span data-lang="en">Editor integration</span></a>
+        <a href="editor-integration.html"><span data-lang="zh">编辑器接入</span><span data-lang="en">Editor integration</span></a>
         <a href="https://github.com/Usuzumi-org/Usuzumi">Github</a>
       </nav>
     </header>
@@ -177,7 +177,7 @@
             <header class="uzu-topbar">
               <span class="uzu-brand-link">Usuzumi</span>
               <nav class="uzu-nav" aria-label="Example navigation">
-                <a href="../index.html"><span data-lang="zh">首页</span><span data-lang="en">Home</span></a>
+                <a href="index.html"><span data-lang="zh">首页</span><span data-lang="en">Home</span></a>
                 <a href="index.html"><span data-lang="zh">组件</span><span data-lang="en">Components</span></a>
                 <a href="#component-page"><span data-lang="zh">文档</span><span data-lang="en">Docs</span></a>
               </nav>
@@ -517,7 +517,7 @@
             <p class="uzu-text uzu-doc-note"><span data-lang="zh">用于页面跳转或低强调操作；主要命令可以用按钮承载。</span><span data-lang="en">Use text links for navigation or low-emphasis actions; buttons can carry primary commands.</span></p>
           </div>
           <div class="uzu-doc-example">
-            <a class="uzu-text-link" href="../index.html"><span data-lang="zh">返回首页</span><span data-lang="en">Back home</span></a>
+            <a class="uzu-text-link" href="index.html"><span data-lang="zh">返回首页</span><span data-lang="en">Back home</span></a>
           </div>
         </section>
 
@@ -550,7 +550,7 @@
           <div class="uzu-doc-example">
             <nav aria-label="Breadcrumb">
               <ol class="uzu-breadcrumb">
-                <li><a href="../index.html"><span data-lang="zh">首页</span><span data-lang="en">Home</span></a></li>
+                <li><a href="index.html"><span data-lang="zh">首页</span><span data-lang="en">Home</span></a></li>
                 <li><a href="index.html"><span data-lang="zh">组件</span><span data-lang="en">Components</span></a></li>
                 <li><span aria-current="page"><span data-lang="zh">面包屑</span><span data-lang="en">Breadcrumb</span></span></li>
               </ol>
@@ -1374,7 +1374,7 @@
         <footer class="uzu-footer">
           <span>&copy; 2026 Usuzumi</span>
           <span class="uzu-divider">·</span>
-          <a href="../editor-integration.html"><span data-lang="zh">编辑器接入</span><span data-lang="en">Editor integration</span></a>
+          <a href="editor-integration.html"><span data-lang="zh">编辑器接入</span><span data-lang="en">Editor integration</span></a>
           <span class="uzu-divider">·</span>
           <a href="https://github.com/Usuzumi-org/Usuzumi" aria-label="Github repository">
             <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
@@ -1386,28 +1386,28 @@
       </div>
     </div>
   </main>
-  <script src="assets/components-notes-foundation.js"></script>
-  <script src="assets/components-notes-layout.js"></script>
-  <script src="assets/components-notes-display.js"></script>
-  <script src="assets/components-notes-navigation.js"></script>
-  <script src="assets/components-notes-forms.js"></script>
-  <script src="assets/components-notes-editors.js"></script>
-  <script src="assets/components-notes-feedback.js"></script>
-  <script src="assets/components-interfaces-foundation.js"></script>
-  <script src="assets/components-interfaces-layout.js"></script>
-  <script src="assets/components-interfaces-display.js"></script>
-  <script src="assets/components-interfaces-navigation.js"></script>
-  <script src="assets/components-interfaces-forms.js"></script>
-  <script src="assets/components-interfaces-editors.js"></script>
-  <script src="assets/components-interfaces-feedback.js"></script>
-  <script src="assets/components-labels.js"></script>
-  <script src="assets/components-doc-utils.js"></script>
-  <script src="assets/components-tutorial.js"></script>
-  <script src="assets/components-interface-descriptions.js"></script>
-  <script src="assets/components-interface-examples.js"></script>
-  <script src="assets/components-interface.js"></script>
-  <script src="assets/components-demo.js"></script>
-  <script src="assets/editor-engines.js"></script>
-  <script src="assets/components.js"></script>
+  <script src="components/assets/components-notes-foundation.js"></script>
+  <script src="components/assets/components-notes-layout.js"></script>
+  <script src="components/assets/components-notes-display.js"></script>
+  <script src="components/assets/components-notes-navigation.js"></script>
+  <script src="components/assets/components-notes-forms.js"></script>
+  <script src="components/assets/components-notes-editors.js"></script>
+  <script src="components/assets/components-notes-feedback.js"></script>
+  <script src="components/assets/components-interfaces-foundation.js"></script>
+  <script src="components/assets/components-interfaces-layout.js"></script>
+  <script src="components/assets/components-interfaces-display.js"></script>
+  <script src="components/assets/components-interfaces-navigation.js"></script>
+  <script src="components/assets/components-interfaces-forms.js"></script>
+  <script src="components/assets/components-interfaces-editors.js"></script>
+  <script src="components/assets/components-interfaces-feedback.js"></script>
+  <script src="components/assets/components-labels.js"></script>
+  <script src="components/assets/components-doc-utils.js"></script>
+  <script src="components/assets/components-tutorial.js"></script>
+  <script src="components/assets/components-interface-descriptions.js"></script>
+  <script src="components/assets/components-interface-examples.js"></script>
+  <script src="components/assets/components-interface.js"></script>
+  <script src="components/assets/components-demo.js"></script>
+  <script src="components/assets/editor-engines.js"></script>
+  <script src="components/assets/components.js"></script>
 </body>
 </html>

@@ -89,8 +89,8 @@ function checkGuardrails(filePath, text) {
   if (relative.startsWith('components/assets/components-notes-') && /"(?:usage|purpose)"\s*:/.test(text)) {
     report(filePath, 'component notes should use structure, behavior, and tutorialSections instead of usage/purpose fields');
   }
-  if (relative === 'components/index.html') {
-    if (!text.includes('assets/editor-engines.js')) report(filePath, 'component page should load the local external editor engine bundle');
+  if (relative === 'components.html') {
+    if (!text.includes('components/assets/editor-engines.js')) report(filePath, 'component page should load the local external editor engine bundle');
     if (/Tiptap mount|markdown-it preview mount|CodeMirror 6 mount/.test(text)) {
       report(filePath, 'component page editor demos should mount real editors instead of placeholder mount copy');
     }
@@ -118,7 +118,7 @@ function hasAnyInterface(details = {}) {
 }
 
 function checkComponentDocsCompleteness() {
-  const filePath = path.join(root, 'components', 'index.html');
+  const filePath = path.join(root, 'components.html');
   const text = readText(filePath);
   const docs = loadComponentDocsData();
   const panels = [...text.matchAll(/<section class="uzu-doc-panel" id="component-([^"]+)"[\s\S]*?(?=<section class="uzu-doc-panel"|<footer class="uzu-footer")/g)];
