@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node ../scripts/build.mjs --components-only"
+  },
+  "dependencies": {
+    "@codemirror/lang-javascript": "^6.2.5",
+    "@tiptap/core": "^3.24.0",
+    "@tiptap/extension-underline": "^3.24.0",
+    "@tiptap/starter-kit": "^3.24.0",
+    "codemirror": "^6.0.2",
+    "markdown-it": "^14.2.0"
+  }
+}
