@@ -1,5 +1,11 @@
 import { javascript } from '@codemirror/lang-javascript';
 import { Editor } from '@tiptap/core';
+import Highlight from '@tiptap/extension-highlight';
+import Link from '@tiptap/extension-link';
+import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table';
+import TaskItem from '@tiptap/extension-task-item';
+import TaskList from '@tiptap/extension-task-list';
+import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import StarterKit from '@tiptap/starter-kit';
 import { basicSetup, EditorView } from 'codemirror';
@@ -29,27 +35,102 @@ function setCommandState(button, active) {
   }
 }
 
+function setCommandAvailability(button, available) {
+  button.disabled = !available;
+  button.setAttribute('aria-disabled', available ? 'false' : 'true');
+}
+
+function getToolbarLinkTarget(shell) {
+  const input = shell.querySelector('[data-uzu-editor-link-target]');
+  return input?.value?.trim() || 'https://tiptap.dev';
+}
+
+function getTableCommandState(editor) {
+  const inTable = editor.isActive('table');
+  return {
+    insertTable: editor.can().chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
+    addColumnAfter: editor.can().chain().focus().addColumnAfter().run(),
+    addRowAfter: editor.can().chain().focus().addRowAfter().run(),
+    horizontalRule: editor.can().chain().focus().setHorizontalRule().run(),
+    clearFormatting: editor.can().chain().focus().unsetAllMarks().clearNodes().run(),
+    inTable
+  };
+}
+
+function getCommandActiveState(editor, command, value) {
+  if (command === 'paragraph') return editor.isActive('paragraph');
+  if (command === 'heading') return editor.isActive('heading', { level: Number(value || 3) });
+  if (command === 'bulletList') return editor.isActive('bulletList');
+  if (command === 'orderedList') return editor.isActive('orderedList');
+  if (command === 'taskList') return editor.isActive('taskList');
+  if (command === 'blockquote') return editor.isActive('blockquote');
+  if (command === 'codeBlock') return editor.isActive('codeBlock');
+  if (command === 'align') return editor.isActive({ textAlign: value || 'left' });
+  if (command === 'highlight') return editor.isActive('highlight');
+  if (command === 'link') return editor.isActive('link');
+  if (command === 'unlink') return false;
+  if (command === 'table') return editor.isActive('table');
+  if (command === 'tableRow') return editor.isActive('tableRow');
+  if (command === 'tableHeader') return editor.isActive('tableHeader');
+  if (command === 'tableCell') return editor.isActive('tableCell');
+  if (command) return editor.isActive(command);
+  return false;
+}
+
 function updateToolbarState(shell, editor) {
+  const tableState = getTableCommandState(editor);
   shell.querySelectorAll('[data-uzu-editor-command]').forEach((button) => {
     const command = button.dataset.uzuEditorCommand || '';
     const value = button.dataset.uzuEditorValue || '';
-    let active = false;
-    if (command === 'heading') active = editor.isActive('heading', { level: Number(value || 3) });
-    else if (command === 'bulletList') active = editor.isActive('bulletList');
-    else if (command === 'orderedList') active = editor.isActive('orderedList');
-    else if (command) active = editor.isActive(command);
-    setCommandState(button, active);
+    setCommandState(button, getCommandActiveState(editor, command, value));
+    if (command === 'insertTable') setCommandAvailability(button, tableState.insertTable);
+    if (command === 'addColumnAfter') setCommandAvailability(button, tableState.inTable && tableState.addColumnAfter);
+    if (command === 'addRowAfter') setCommandAvailability(button, tableState.inTable && tableState.addRowAfter);
+    if (command === 'horizontalRule') setCommandAvailability(button, tableState.horizontalRule);
+    if (command === 'clearFormatting') setCommandAvailability(button, tableState.clearFormatting);
+    if (command === 'undo') setCommandAvailability(button, editor.can().undo());
+    if (command === 'redo') setCommandAvailability(button, editor.can().redo());
+    if (command === 'unlink') setCommandAvailability(button, editor.isActive('link'));
   });
+  const linkInput = shell.querySelector('[data-uzu-editor-link-target]');
+  if (linkInput) linkInput.toggleAttribute('aria-invalid', !linkInput.value.trim());
+}
+
+function toggleLink(editor, url) {
+  if (editor.isActive('link')) return editor.chain().focus().unsetLink().run();
+  return editor
+    .chain()
+    .focus()
+    .extendMarkRange('link')
+    .setLink({ href: url || 'https://tiptap.dev' })
+    .run();
 }
 
 function runTiptapCommand(editor, command, value) {
   const chain = editor.chain().focus();
+  if (command === 'paragraph') return chain.setParagraph().run();
   if (command === 'bold') return chain.toggleBold().run();
   if (command === 'italic') return chain.toggleItalic().run();
   if (command === 'underline') return chain.toggleUnderline().run();
+  if (command === 'strike') return chain.toggleStrike().run();
+  if (command === 'code') return chain.toggleCode().run();
+  if (command === 'highlight') return chain.toggleHighlight().run();
+  if (command === 'link') return toggleLink(editor, value);
   if (command === 'bulletList') return chain.toggleBulletList().run();
   if (command === 'orderedList') return chain.toggleOrderedList().run();
+  if (command === 'taskList') return chain.toggleTaskList().run();
+  if (command === 'blockquote') return chain.toggleBlockquote().run();
+  if (command === 'codeBlock') return chain.toggleCodeBlock().run();
   if (command === 'heading') return chain.toggleHeading({ level: Number(value || 3) }).run();
+  if (command === 'align') return chain.setTextAlign(value || 'left').run();
+  if (command === 'horizontalRule') return chain.setHorizontalRule().run();
+  if (command === 'insertTable') return chain.insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+  if (command === 'addColumnAfter') return chain.addColumnAfter().run();
+  if (command === 'addRowAfter') return chain.addRowAfter().run();
+  if (command === 'clearFormatting') return chain.unsetAllMarks().clearNodes().run();
+  if (command === 'unlink') return chain.unsetLink().run();
+  if (command === 'undo') return chain.undo().run();
+  if (command === 'redo') return chain.redo().run();
   return false;
 }
 
@@ -58,11 +139,44 @@ function initRichEditor(shell) {
   if (!surface || activeRichEditors.has(shell)) return;
   const editor = new Editor({
     element: surface,
-    extensions: [StarterKit, Underline],
+    extensions: [
+      StarterKit,
+      Underline,
+      Highlight,
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        defaultProtocol: 'https'
+      }),
+      TaskList,
+      TaskItem.configure({
+        nested: true
+      }),
+      Table.configure({
+        resizable: true
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      TextAlign.configure({
+        types: ['heading', 'paragraph']
+      })
+    ],
     content: `
-      <h3>Usuzumi editor bridge</h3>
-      <p>Edit this Tiptap document. The toolbar above is styled by Usuzumi and sends commands through <code>uzu-editor-command</code>.</p>
-      <ul><li>The document model, selection, history, and keyboard behavior come from Tiptap.</li></ul>
+      <h2>Release draft</h2>
+      <p><strong>Usuzumi</strong> keeps the editor shell quiet while Tiptap handles the document model, selection, history, links, lists, and keyboard shortcuts.</p>
+      <p>Try selecting this sentence, then apply <mark>highlight</mark>, inline <code>code</code>, alignment, or a link from the toolbar.</p>
+      <ul data-type="taskList">
+        <li data-type="taskItem" data-checked="true"><label><input type="checkbox" checked="checked"><span></span></label><div><p>Wire Usuzumi toolbar events to Tiptap commands.</p></div></li>
+        <li data-type="taskItem" data-checked="false"><label><input type="checkbox"><span></span></label><div><p>Replace the editor engine without changing the surrounding UI shell.</p></div></li>
+      </ul>
+      <blockquote><p>The page demonstrates integration boundaries: Usuzumi styles and emits events; Tiptap edits the document.</p></blockquote>
+      <table>
+        <tr><th>Area</th><th>Engine</th><th>Notes</th></tr>
+        <tr><td>Structure</td><td>Tiptap</td><td>Commands, state, and selection live here.</td></tr>
+        <tr><td>Surface</td><td>Usuzumi</td><td>Toolbar, spacing, and typography stay consistent.</td></tr>
+      </table>
+      <pre><code>editor.chain().focus().toggleBold().run();</code></pre>
     `,
     editorProps: {
       attributes: {
@@ -85,14 +199,17 @@ function initRichEditor(shell) {
     }
   });
   activeRichEditors.set(shell, editor);
+  shell.addEventListener('input', (event) => {
+    if (event.target?.matches?.('[data-uzu-editor-link-target]')) {
+      updateToolbarState(shell, editor);
+    }
+  });
   shell.addEventListener('uzu-editor-command', (event) => {
     const { button, command, value } = event.detail;
-    if (!runTiptapCommand(editor, command, value)) return;
+    const commandValue = command === 'link' ? getToolbarLinkTarget(shell) : value;
+    if (!runTiptapCommand(editor, command, commandValue)) return;
     if (button) {
-      const active = command === 'heading'
-        ? editor.isActive('heading', { level: Number(value || 3) })
-        : editor.isActive(command);
-      setCommandState(button, active);
+      setCommandState(button, getCommandActiveState(editor, command, commandValue));
     }
     updateToolbarState(shell, editor);
   });
@@ -131,7 +248,7 @@ function initCodeEditor(shell) {
     parent: mount,
     doc: `const theme = {
   surface: "var(--uzu-surface)",
-  accent: "var(--uzu-accent)"
+  accent: "var(--uzu-fg-strong)"
 };
 
 console.log(theme);`,
@@ -142,7 +259,7 @@ console.log(theme);`,
       EditorView.theme({
         '&': {
           minHeight: '260px',
-          color: 'var(--uzu-text)',
+          color: 'var(--uzu-fg)',
           backgroundColor: 'var(--uzu-surface)'
         },
         '.cm-content': {
@@ -151,23 +268,23 @@ console.log(theme);`,
         },
         '.cm-gutters': {
           backgroundColor: 'var(--uzu-surface-soft)',
-          color: 'var(--uzu-text-muted)',
+          color: 'var(--uzu-muted)',
           borderRightColor: 'var(--uzu-border)'
         },
         '.cm-activeLine': {
-          backgroundColor: 'color-mix(in srgb, var(--uzu-accent) 8%, transparent)'
+          backgroundColor: 'color-mix(in srgb, var(--uzu-fg-strong) 8%, transparent)'
         },
         '.cm-activeLineGutter': {
-          backgroundColor: 'color-mix(in srgb, var(--uzu-accent) 10%, var(--uzu-surface-soft))'
+          backgroundColor: 'color-mix(in srgb, var(--uzu-fg-strong) 10%, var(--uzu-surface-soft))'
         },
         '&.cm-focused': {
           outline: 'none'
         },
         '&.cm-focused .cm-cursor': {
-          borderLeftColor: 'var(--uzu-text)'
+          borderLeftColor: 'var(--uzu-fg-strong)'
         },
         '&.cm-focused .cm-selectionBackground, .cm-selectionBackground': {
-          backgroundColor: 'color-mix(in srgb, var(--uzu-accent) 22%, transparent)'
+          backgroundColor: 'color-mix(in srgb, var(--uzu-fg-strong) 22%, transparent)'
         }
       })
     ]

@@ -959,14 +959,47 @@
             <p class="uzu-text uzu-doc-note"><span data-lang="zh">Usuzumi 提供工具栏、内容区外观和命令事件。文档模型、历史记录、粘贴处理、协作和快捷键交给 Tiptap。</span><span data-lang="en">Usuzumi provides the toolbar, surface styling, and command events. Document models, history, paste handling, collaboration, and shortcuts belong in Tiptap.</span></p>
           </div>
           <div class="uzu-doc-example">
-            <section class="uzu-editor" data-uzu-rich-editor>
-              <div class="uzu-editor-toolbar" role="toolbar" aria-label="Rich text tools">
-                <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="bold" data-uzu-editor-toggle aria-label="Bold">B</button>
-                <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="italic" data-uzu-editor-toggle aria-label="Italic">I</button>
-                <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="underline" data-uzu-editor-toggle aria-label="Underline">U</button>
-                <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="bulletList" data-uzu-editor-toggle aria-label="Bullet list">•</button>
-                <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="orderedList" data-uzu-editor-toggle aria-label="Numbered list">1.</button>
-                <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="heading" data-uzu-editor-value="3" aria-label="Heading">H3</button>
+            <section class="uzu-editor" style="--uzu-editor-mount-min-height: 320px;" data-uzu-rich-editor>
+              <div class="uzu-editor-toolbar uzu-editor-toolbar-rich" role="toolbar" aria-label="Rich text tools">
+                <span class="uzu-toolbar-group" role="group" aria-label="Block style">
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="paragraph" data-uzu-editor-toggle aria-label="Paragraph">P</button>
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="heading" data-uzu-editor-value="2" data-uzu-editor-toggle aria-label="Heading 2">H2</button>
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="heading" data-uzu-editor-value="3" data-uzu-editor-toggle aria-label="Heading 3">H3</button>
+                </span>
+                <span class="uzu-toolbar-group" role="group" aria-label="Inline style">
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="bold" data-uzu-editor-toggle aria-label="Bold"><strong>B</strong></button>
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="italic" data-uzu-editor-toggle aria-label="Italic"><em>I</em></button>
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="underline" data-uzu-editor-toggle aria-label="Underline"><u>U</u></button>
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="strike" data-uzu-editor-toggle aria-label="Strike">S</button>
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="code" data-uzu-editor-toggle aria-label="Inline code">&lt;/&gt;</button>
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="highlight" data-uzu-editor-toggle aria-label="Highlight">Mark</button>
+                  <span class="uzu-toolbar-link-field">
+                    <input class="uzu-input uzu-toolbar-link-input" type="url" value="https://tiptap.dev" data-uzu-editor-link-target aria-label="Link URL">
+                    <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="link" data-uzu-editor-toggle aria-label="Apply link">Link</button>
+                    <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="unlink" aria-label="Remove link">Unlink</button>
+                  </span>
+                </span>
+                <span class="uzu-toolbar-group" role="group" aria-label="Lists and blocks">
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="bulletList" data-uzu-editor-toggle aria-label="Bullet list">•</button>
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="orderedList" data-uzu-editor-toggle aria-label="Numbered list">1.</button>
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="taskList" data-uzu-editor-toggle aria-label="Task list">☑</button>
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="blockquote" data-uzu-editor-toggle aria-label="Blockquote">“”</button>
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="codeBlock" data-uzu-editor-toggle aria-label="Code block">{ }</button>
+                </span>
+                <span class="uzu-toolbar-group" role="group" aria-label="Alignment">
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="align" data-uzu-editor-value="left" data-uzu-editor-toggle aria-label="Align left">Left</button>
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="align" data-uzu-editor-value="center" data-uzu-editor-toggle aria-label="Align center">Center</button>
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="align" data-uzu-editor-value="right" data-uzu-editor-toggle aria-label="Align right">Right</button>
+                </span>
+                <span class="uzu-toolbar-group" role="group" aria-label="Insert and history">
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="insertTable" aria-label="Insert table">Table</button>
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="addColumnAfter" aria-label="Add column">Col+</button>
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="addRowAfter" aria-label="Add row">Row+</button>
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="horizontalRule" aria-label="Horizontal rule">Rule</button>
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="clearFormatting" aria-label="Clear formatting">Clear</button>
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="undo" aria-label="Undo">Undo</button>
+                  <button class="uzu-toolbar-button" type="button" data-uzu-editor-command="redo" aria-label="Redo">Redo</button>
+                </span>
               </div>
               <div class="uzu-editor-surface uzu-editor-mount" data-uzu-editor-surface data-editor-engine="Tiptap" role="textbox" aria-multiline="true" tabindex="0"></div>
               <p class="uzu-editor-status"><span data-lang="zh">点击工具栏会派发 <code class="uzu-code">uzu-editor-command</code>，项目代码在事件里调用 Tiptap 命令。</span><span data-lang="en">Toolbar clicks emit <code class="uzu-code">uzu-editor-command</code>; application code calls Tiptap commands from that event.</span></p>
@@ -1002,7 +1035,7 @@
             <section class="uzu-editor" data-code-editor-shell style="--uzu-editor-min-height: 280px">
               <div class="uzu-editor-surface uzu-editor-mount" data-code-editor-mount role="textbox" aria-multiline="true" tabindex="0"></div>
             </section>
-            <textarea class="uzu-code-editor uzu-doc-short-code" spellcheck="false" aria-label="Short code textarea">const shortSnippet = "native textarea";</textarea>
+            <textarea class="uzu-code-editor" style="--uzu-editor-min-height: 74px;" spellcheck="false" aria-label="Short code textarea">const shortSnippet = "native textarea";</textarea>
           </div>
         </section>
 
@@ -1409,5 +1442,6 @@
   <script src="components/assets/components-demo.js"></script>
   <script src="components/assets/editor-engines.js"></script>
   <script src="components/assets/components.js"></script>
+  <script src="components/assets/code-highlight.js"></script>
 </body>
 </html>

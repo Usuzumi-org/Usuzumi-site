@@ -102,10 +102,82 @@
     return root;
   }
 
+  function escapeHtmlText(value) {
+    return String(value || '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;');
+  }
+
+  function escapeHtmlAttribute(value) {
+    return escapeHtmlText(value).replaceAll('"', '&quot;');
+  }
+
+  function formatAttributes(element) {
+    return [...element.attributes].map((attribute) => {
+      if (attribute.value === '') return attribute.name;
+      return `${attribute.name}="${escapeHtmlAttribute(attribute.value)}"`;
+    }).join(' ');
+  }
+
+  function isCompactElement(element) {
+    return element.childNodes.length > 0 && [...element.childNodes].every((node) => (
+      node.nodeType === Node.TEXT_NODE || (
+        node.nodeType === Node.ELEMENT_NODE &&
+        node.childNodes.length === 1 &&
+        node.firstChild?.nodeType === Node.TEXT_NODE
+      )
+    ));
+  }
+
+  function formatCompactElement(element) {
+    const attributes = formatAttributes(element);
+    const open = attributes ? `<${element.tagName.toLowerCase()} ${attributes}>` : `<${element.tagName.toLowerCase()}>`;
+    const children = [...element.childNodes].map((node) => {
+      if (node.nodeType === Node.TEXT_NODE) return escapeHtmlText(node.textContent.trim());
+      return formatElement(node, 0).trim();
+    }).join('');
+    return `${open}${children}</${element.tagName.toLowerCase()}>`;
+  }
+
+  function formatElement(element, depth = 0) {
+    const tag = element.tagName.toLowerCase();
+    const indent = '  '.repeat(depth);
+    const attributes = formatAttributes(element);
+    const open = attributes ? `<${tag} ${attributes}>` : `<${tag}>`;
+    const voidTags = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
+    if (voidTags.has(tag)) return `${indent}${open}`;
+    if (!element.childNodes.length) return `${indent}${open}</${tag}>`;
+    if (isCompactElement(element) && element.children.length <= 1 && formatCompactElement(element).length <= 120) {
+      return `${indent}${formatCompactElement(element)}`;
+    }
+
+    const children = [...element.childNodes].flatMap((node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent.trim();
+        return text ? [`${'  '.repeat(depth + 1)}${escapeHtmlText(text)}`] : [];
+      }
+      if (node.nodeType === Node.ELEMENT_NODE) return [formatElement(node, depth + 1)];
+      return [];
+    });
+    return [`${indent}${open}`, ...children, `${indent}</${tag}>`].join('\n');
+  }
+
+  function formatSnippetHtml(container) {
+    return [...container.childNodes].flatMap((node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent.trim();
+        return text ? [escapeHtmlText(text)] : [];
+      }
+      if (node.nodeType === Node.ELEMENT_NODE) return [formatElement(node, 0)];
+      return [];
+    }).join('\n');
+  }
+
   function snippetFrom(preview, extraNodes = []) {
     const container = document.createElement('div');
     [...preview.childNodes, ...extraNodes].forEach((node) => container.append(cleanupClone(node.cloneNode(true))));
-    return container.innerHTML.trim().replace(/\n\s*\n/g, '\n');
+    return formatSnippetHtml(container).trim().replace(/\n\s*\n/g, '\n');
   }
 
   function buildCodePanel(panel, preview, codeText) {
@@ -158,6 +230,7 @@
     const pre = document.createElement('pre');
     pre.className = 'uzu-code-block-body uzu-scroll';
     const code = document.createElement('code');
+    code.className = 'language-html';
     code.textContent = codeText || `<!-- ${name} -->`;
     pre.append(code);
 

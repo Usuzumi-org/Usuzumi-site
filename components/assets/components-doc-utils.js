@@ -113,7 +113,22 @@
     button.dataset.uzuCopyText = 'Copy';
     button.dataset.uzuCopiedText = 'Copied';
     button.dataset.uzuCopyFailedText = 'Copy failed';
-    button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><rect x="8" y="8" width="10" height="10" rx="1.8" stroke="currentColor" stroke-width="1.7"/><path d="M6 15H5.8A1.8 1.8 0 0 1 4 13.2V5.8A1.8 1.8 0 0 1 5.8 4h7.4A1.8 1.8 0 0 1 15 5.8V6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span data-uzu-code-copy-label>Copy</span>';
+    button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><rect x="8" y="8" width="10" height="10" rx="1.8" stroke="currentColor" stroke-width="1.7"/><path d="M6 15H5.8A1.8 1.8 0 0 1 4 13.2V5.8A1.8 1.8 0 0 1 5.8 4h7.4A1.8 1.8 0 0 1 15 5.8V6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
+    const copyZh = document.createElement('span');
+    const copyEn = document.createElement('span');
+    copyZh.dataset.lang = 'zh';
+    copyZh.dataset.uzuCodeCopyLabel = '';
+    copyZh.dataset.uzuCopyText = '\u590d\u5236';
+    copyZh.dataset.uzuCopiedText = '\u5df2\u590d\u5236';
+    copyZh.dataset.uzuCopyFailedText = '\u590d\u5236\u5931\u8d25';
+    copyZh.textContent = '\u590d\u5236';
+    copyEn.dataset.lang = 'en';
+    copyEn.dataset.uzuCodeCopyLabel = '';
+    copyEn.dataset.uzuCopyText = 'Copy';
+    copyEn.dataset.uzuCopiedText = 'Copied';
+    copyEn.dataset.uzuCopyFailedText = 'Copy failed';
+    copyEn.textContent = 'Copy';
+    button.append(copyZh, copyEn);
     shell.append(pre, button);
     return shell;
   }

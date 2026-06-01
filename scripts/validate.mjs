@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ignoredDirs = new Set(['.git', 'node_modules', 'dist', 'build', 'coverage', '.cache', '.tmp']);
-const ignoredFiles = new Set(['editor-engines.js']);
+const ignoredFiles = new Set(['editor-engines.js', 'code-highlight.js']);
 const textExtensions = new Set(['.css', '.html', '.js', '.md', '.json']);
 const issues = [];
 
@@ -86,11 +86,21 @@ function checkGuardrails(filePath, text) {
   if (/(?:href|src)\s*=\s*["']\s*javascript:/i.test(text)) report(filePath, 'javascript: URL is not allowed');
   if (/font-size\s*:[^;]*vw/i.test(text)) report(filePath, 'viewport-width font sizing is not allowed');
   if (/letter-spacing\s*:\s*-/i.test(text)) report(filePath, 'negative letter-spacing is not allowed');
+  if (/--uzu-(?:text|text-muted|accent)\b/.test(text)) {
+    report(filePath, 'site code should use public Usuzumi tokens such as --uzu-fg, --uzu-muted, and --uzu-fg-strong');
+  }
+  if (/uzu-shiki|shiki-pre|shiki-code|--uzu-shiki/i.test(text)) {
+    report(filePath, 'syntax highlighting must use native .uzu-code-block interfaces, not site-only shiki classes');
+  }
+  if (relative === 'components/assets/components.css' && /\.(?:uzu-editor-mount|uzu-editor-toolbar-rich|uzu-toolbar-link-[A-Za-z0-9_-]+)\b/.test(text)) {
+    report(filePath, 'component page CSS should not redefine native editor shell classes');
+  }
   if (relative.startsWith('components/assets/components-notes-') && /"(?:usage|purpose)"\s*:/.test(text)) {
     report(filePath, 'component notes should use structure, behavior, and tutorialSections instead of usage/purpose fields');
   }
   if (relative === 'components.html') {
     if (!text.includes('components/assets/editor-engines.js')) report(filePath, 'component page should load the local external editor engine bundle');
+    if (!text.includes('components/assets/code-highlight.js')) report(filePath, 'component page should load the local syntax highlighting bundle');
     if (/Tiptap mount|markdown-it preview mount|CodeMirror 6 mount/.test(text)) {
       report(filePath, 'component page editor demos should mount real editors instead of placeholder mount copy');
     }
