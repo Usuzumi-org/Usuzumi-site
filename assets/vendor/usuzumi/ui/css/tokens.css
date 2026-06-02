@@ -1,0 +1,96 @@
+:root,
+.uzu-app,
+.uzu-scope {
+  color-scheme: light;
+  --uzu-bg: #f4f3f0;
+  --uzu-surface: #fbfaf7;
+  --uzu-surface-soft: #efeee9;
+  --uzu-surface-muted: #ebeae6;
+  --uzu-surface-inset: #e7e6e1;
+  --uzu-fg: #333331;
+  --uzu-fg-strong: #20201e;
+  --uzu-muted: #686866;
+  --uzu-subtle: #6d6c68;
+  --uzu-soft: #8a8a85;
+  --uzu-disabled: #b9b8b2;
+  --uzu-border: #dad9d5;
+  --uzu-border-soft: #e5e4e0;
+  --uzu-border-strong: #aaa9a2;
+  --uzu-action-bg: #2f2f2c;
+  --uzu-action-fg: #f7f6f1;
+  --uzu-success: #4e6655;
+  --uzu-success-bg: #e6ede7;
+  --uzu-warning: #7b6842;
+  --uzu-warning-bg: #f0eadc;
+  --uzu-danger: #7a4d4a;
+  --uzu-danger-bg: #efe3e1;
+  --uzu-info: #56606a;
+  --uzu-info-bg: #e5e7e8;
+  --uzu-control-bg: rgba(244, 243, 240, 0.78);
+  --uzu-shadow-popover: 0 20px 70px rgba(25, 25, 22, 0.11);
+  --uzu-focus-ring: 0 0 0 2px var(--uzu-surface), 0 0 0 4px var(--uzu-fg-strong);
+  --uzu-font-serif: Georgia, "Times New Roman", "Noto Serif SC", "Source Han Serif CN", serif;
+  --uzu-font-signature: "Meddon Custom", cursive;
+  --uzu-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --uzu-motion-quick: 160ms;
+  --uzu-motion-base: 180ms;
+  --uzu-motion-slow: 280ms;
+  --uzu-ease-standard: cubic-bezier(.2, .8, .2, 1);
+  --uzu-radius-micro: 4px;
+  --uzu-radius-standard: 7px;
+  --uzu-radius-medium: 10px;
+  --uzu-radius-large: 14px;
+  --uzu-radius-pill: 999px;
+  --uzu-space-1: 4px;
+  --uzu-space-2: 8px;
+  --uzu-space-3: 12px;
+  --uzu-space-4: 16px;
+  --uzu-space-5: 20px;
+  --uzu-space-6: 24px;
+  --uzu-space-8: 32px;
+  --uzu-space-10: 40px;
+  --uzu-card-title-size: 18px;
+  --uzu-card-title-line: 1.25;
+  --uzu-card-subtitle-size: 13px;
+  --uzu-card-subtitle-line: 1.55;
+  --uzu-card-title-gap: 6px;
+  --uzu-card-block-gap: 12px;
+  --uzu-field-gap: 5px;
+}
+
+:root[data-theme="dark"],
+.uzu-app[data-theme="dark"],
+.uzu-scope[data-theme="dark"],
+[data-uzu-theme="dark"],
+[data-theme="dark"] .uzu-app,
+[data-theme="dark"] .uzu-scope,
+[data-uzu-theme="dark"] .uzu-app,
+[data-uzu-theme="dark"] .uzu-scope {
+  color-scheme: dark;
+  --uzu-bg: #181817;
+  --uzu-surface: #20201e;
+  --uzu-surface-soft: #242421;
+  --uzu-surface-muted: #292824;
+  --uzu-surface-inset: #141413;
+  --uzu-fg: #e5e3de;
+  --uzu-fg-strong: #f4f2ec;
+  --uzu-muted: #bbb7ad;
+  --uzu-subtle: #9b978f;
+  --uzu-soft: #97938b;
+  --uzu-disabled: #66625b;
+  --uzu-border: #383733;
+  --uzu-border-soft: #292824;
+  --uzu-border-strong: #5c5952;
+  --uzu-action-bg: #f4f2ec;
+  --uzu-action-fg: #181817;
+  --uzu-success: #b7d0be;
+  --uzu-success-bg: #263229;
+  --uzu-warning: #d6c08e;
+  --uzu-warning-bg: #342d1f;
+  --uzu-danger: #d6aaa5;
+  --uzu-danger-bg: #352524;
+  --uzu-info: #c0c8d0;
+  --uzu-info-bg: #252a30;
+  --uzu-control-bg: rgba(24, 24, 23, 0.78);
+  --uzu-shadow-popover: 0 24px 80px rgba(0, 0, 0, 0.36);
+}

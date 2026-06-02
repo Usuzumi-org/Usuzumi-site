@@ -30,7 +30,7 @@
     const example = buildInterfaceExample(name, item, context);
     if (!example) return null;
     const code = document.createElement('code');
-    code.className = 'uzu-code uzu-doc-interface-example';
+    code.className = 'uzu-code uzu-reference-example-code';
     code.textContent = example;
     return code;
   }
@@ -38,19 +38,19 @@
   function createInterfaceGroup(name, label, values, context = {}) {
     if (!values || !values.length) return null;
     const group = document.createElement('div');
-    group.className = 'uzu-doc-interface-group';
+    group.className = 'uzu-reference-group';
     const head = document.createElement('div');
-    head.className = 'uzu-doc-interface-group-head';
+    head.className = 'uzu-reference-group-head';
     const title = document.createElement('p');
-    title.className = 'uzu-doc-interface-label';
+    title.className = 'uzu-reference-label';
     title.append(textPair(label[0], label[1]));
-    const description = createDocText(descriptions[name] || ['这些公开项可以直接在项目代码中使用。', 'These public items can be used directly in application code.'], 'uzu-doc-interface-description');
+    const description = createDocText(descriptions[name] || ['这些公开项可以直接在项目代码中使用。', 'These public items can be used directly in application code.'], 'uzu-reference-description');
     head.append(title, description);
 
     const tableWrap = document.createElement('div');
-    tableWrap.className = 'uzu-table-wrap uzu-doc-interface-table-wrap';
+    tableWrap.className = 'uzu-table-wrap uzu-reference-table-wrap';
     const table = document.createElement('table');
-    table.className = 'uzu-table uzu-doc-interface-table';
+    table.className = 'uzu-table uzu-reference-table';
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
     [
@@ -72,9 +72,9 @@
       const purposeCell = document.createElement('td');
       const exampleCell = document.createElement('td');
       const code = document.createElement('code');
-      code.className = 'uzu-code uzu-doc-interface-name';
+      code.className = 'uzu-code uzu-reference-name';
       code.textContent = item;
-      const itemText = createDocText(describeInterfaceItem(name, item, context), 'uzu-doc-interface-item-text');
+      const itemText = createDocText(describeInterfaceItem(name, item, context), 'uzu-reference-item-text');
       const example = createInterfaceExample(item, name, context);
       nameCell.append(code);
       purposeCell.append(itemText);
@@ -91,7 +91,7 @@
   function createInterface(info, key) {
     const details = componentInterfaces[key] || {};
     const panel = document.createElement('aside');
-    panel.className = 'uzu-doc-interface';
+    panel.className = 'uzu-reference-card uzu-reference-interface';
     const title = document.createElement('h3');
     title.append(textPair('可配置项', 'Configurable Parts'));
     panel.append(title);

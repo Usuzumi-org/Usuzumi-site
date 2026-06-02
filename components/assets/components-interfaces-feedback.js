@@ -54,6 +54,8 @@ window.UsuzumiComponentDocs.componentInterfaces = Object.assign(
     "presets": [
       ".uzu-progress-indeterminate",
       ".uzu-progress-circular",
+      ".uzu-progress-circular-track",
+      ".uzu-progress-circular-fill",
       ".uzu-activity"
     ],
     "attributes": [

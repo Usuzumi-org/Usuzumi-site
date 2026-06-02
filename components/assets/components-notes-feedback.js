@@ -24,6 +24,8 @@ window.UsuzumiComponentDocs.componentNotes = Object.assign(
     "classes": [
       ".uzu-progress",
       ".uzu-progress-circular",
+      ".uzu-progress-circular-track",
+      ".uzu-progress-circular-fill",
       ".uzu-activity"
     ],},
   "skeleton": {

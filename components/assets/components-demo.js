@@ -74,7 +74,7 @@
     const nav = document.querySelector('[data-uzu-component-nav]');
     if (!nav) return;
     const groups = new Map();
-    document.querySelectorAll('.uzu-doc-panel').forEach((panel) => {
+    document.querySelectorAll('.uzu-reference-panel').forEach((panel) => {
       const meta = getPanelMeta(panel);
       if (!groups.has(meta.category)) groups.set(meta.category, []);
       groups.get(meta.category).push({ panel, meta });
@@ -185,10 +185,10 @@
     const previewTabId = `${panel.id}-preview-tab`;
     const codeTabId = `${panel.id}-code-tab`;
     const demo = document.createElement('div');
-    demo.className = 'uzu-doc-demo';
+    demo.className = 'uzu-reference-demo';
 
     const tabs = document.createElement('div');
-    tabs.className = 'uzu-tabs uzu-doc-demo-tabs';
+    tabs.className = 'uzu-tabs uzu-reference-demo-tabs';
     tabs.setAttribute('data-uzu-tabs', '');
     tabs.setAttribute('aria-label', 'Preview and code');
 
@@ -215,14 +215,14 @@
     tabs.append(previewTab, codeTab);
 
     const previewPanel = document.createElement('div');
-    previewPanel.className = 'uzu-doc-preview';
+    previewPanel.className = 'uzu-reference-preview';
     previewPanel.id = `${panel.id}-preview`;
     previewPanel.setAttribute('role', 'tabpanel');
     previewPanel.setAttribute('aria-labelledby', previewTabId);
     previewPanel.append(preview);
 
     const codePanel = document.createElement('div');
-    codePanel.className = 'uzu-doc-code-panel';
+    codePanel.className = 'uzu-reference-code-panel';
     codePanel.id = `${panel.id}-code`;
     codePanel.setAttribute('role', 'tabpanel');
     codePanel.setAttribute('aria-labelledby', codeTabId);
@@ -271,7 +271,7 @@
     const key = panel.id.replace('component-', '');
     const info = componentNotes[key];
     const heading = panel.querySelector('.uzu-section-head');
-    const preview = panel.querySelector(':scope > .uzu-doc-example, :scope > .uzu-callout, :scope > .uzu-popover, :scope > .uzu-type-list');
+    const preview = panel.querySelector(':scope > .uzu-reference-example, :scope > .uzu-callout, :scope > .uzu-popover, :scope > .uzu-type-list');
     let demo = null;
     if (preview) {
       const extraNodes = ['dialog', 'alert-dialog', 'drawer'].includes(key) ? [...panel.querySelectorAll(':scope > .uzu-dialog-overlay')] : [];
@@ -283,7 +283,7 @@
     }
     if (info && heading) {
       const block = document.createElement('div');
-      block.className = 'uzu-doc-guidance-block';
+      block.className = 'uzu-reference-block';
       block.append(createGuidance(info, key), createInterface(info, key));
       (demo || heading).after(block);
     }
@@ -300,7 +300,7 @@
     }
     const control = document.querySelector(`[data-uzu-panel-target="${target}"]`);
     if (!panel || !control) return;
-    document.querySelectorAll('.uzu-doc-panel').forEach((item) => {
+    document.querySelectorAll('.uzu-reference-panel').forEach((item) => {
       item.hidden = item !== panel;
     });
     document.querySelectorAll('[data-uzu-panel-target^="#component-"]').forEach((item) => {
@@ -312,7 +312,7 @@
 
   function enhanceComponentDocs() {
     buildComponentNavigation();
-    document.querySelectorAll('.uzu-doc-panel').forEach(enhancePanel);
+    document.querySelectorAll('.uzu-reference-panel').forEach(enhancePanel);
     applyInitialHash();
     if (window.Usuzumi) window.Usuzumi.init(document);
   }

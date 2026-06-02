@@ -4,14 +4,10 @@
   "type": "module",
   "description": "Documentation and component demos for Usuzumi.",
   "scripts": {
+    "bootstrap": "npm install --prefix components",
+    "postinstall": "npm run bootstrap && npm run build",
     "build": "node scripts/build.mjs",
     "check:build": "node scripts/build.mjs --check",
-    "validate": "npm run check:build && node scripts/validate.mjs"
-  },
-  "dependencies": {
-    "usuzumi": "file:.."
-  },
-  "devDependencies": {
-    "esbuild": "^0.28.0"
+    "validate": "npm run check:build && node scripts/validate.mjs && node scripts/browser-smoke.mjs"
   }
 }

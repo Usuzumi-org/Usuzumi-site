@@ -20,10 +20,26 @@ window.UsuzumiComponentDocs.componentInterfaces = Object.assign(
     ]
   },
   "typography": {
+    "base": [
+      ".uzu-signature",
+      ".uzu-hero-title",
+      ".uzu-page-title",
+      ".uzu-section-title",
+      ".uzu-body-large",
+      ".uzu-text",
+      ".uzu-section-label",
+      ".uzu-kicker",
+      ".uzu-title-pair"
+    ],
     "variables": [
       "--uzu-font-serif",
       "--uzu-font-signature",
-      "--uzu-font-mono"
+      "--uzu-font-mono",
+      "--uzu-card-title-size",
+      "--uzu-card-title-line",
+      "--uzu-card-subtitle-size",
+      "--uzu-card-subtitle-line",
+      "--uzu-card-title-gap"
     ],
     "files": [
       "ui/usuzumi.css",

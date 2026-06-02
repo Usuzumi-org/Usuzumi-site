@@ -1,31 +1,29 @@
-import { javascript } from '@codemirror/lang-javascript';
-import { Editor } from '@tiptap/core';
-import Highlight from '@tiptap/extension-highlight';
-import Link from '@tiptap/extension-link';
-import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table';
-import TaskItem from '@tiptap/extension-task-item';
-import TaskList from '@tiptap/extension-task-list';
-import TextAlign from '@tiptap/extension-text-align';
-import Underline from '@tiptap/extension-underline';
-import StarterKit from '@tiptap/starter-kit';
-import { basicSetup, EditorView } from 'codemirror';
-import MarkdownIt from 'markdown-it';
-
-const markdown = new MarkdownIt({
-  html: false,
-  linkify: true,
-  typographer: true
-});
+import {
+  Editor,
+  Highlight,
+  Link,
+  Table,
+  TableCell,
+  TableHeader,
+  TableRow,
+  TaskItem,
+  TaskList,
+  TextAlign,
+  Underline,
+  StarterKit
+} from '../runtime/rich-editor-deps.js';
 
 const activeRichEditors = new WeakMap();
-const activeCodeEditors = new WeakMap();
-const activeMarkdownEditors = new WeakSet();
 
 function emit(target, name, detail) {
   target.dispatchEvent(new CustomEvent(name, {
     bubbles: true,
     detail
   }));
+}
+
+function isVisible(element) {
+  return Boolean(element.offsetParent || element.getClientRects().length);
 }
 
 function setCommandState(button, active) {
@@ -136,7 +134,7 @@ function runTiptapCommand(editor, command, value) {
 
 function initRichEditor(shell) {
   const surface = shell.querySelector('[data-uzu-editor-surface]');
-  if (!surface || activeRichEditors.has(shell)) return;
+  if (!surface || activeRichEditors.has(shell)) return null;
   const editor = new Editor({
     element: surface,
     extensions: [
@@ -208,119 +206,36 @@ function initRichEditor(shell) {
     const { button, command, value } = event.detail;
     const commandValue = command === 'link' ? getToolbarLinkTarget(shell) : value;
     if (!runTiptapCommand(editor, command, commandValue)) return;
-    if (button) {
-      setCommandState(button, getCommandActiveState(editor, command, commandValue));
-    }
+    if (button) setCommandState(button, getCommandActiveState(editor, command, commandValue));
     updateToolbarState(shell, editor);
   });
+  return editor;
 }
 
-function renderMarkdown(shell) {
-  const source = shell.querySelector('[data-uzu-markdown-source]');
-  const preview = shell.querySelector('[data-uzu-markdown-preview]');
-  if (!source || !preview) return;
-  const value = source.value || '';
-  shell.dataset.uzuMarkdownValue = value;
-  preview.innerHTML = markdown.render(value);
-  window.Usuzumi?.init(preview);
-  emit(shell, 'uzu-markdown-editor-render', {
-    editor: shell,
-    source,
-    preview,
-    value
-  });
-}
-
-function initMarkdownEditor(shell) {
-  if (activeMarkdownEditors.has(shell)) return;
-  const source = shell.querySelector('[data-uzu-markdown-source]');
-  if (!source) return;
-  activeMarkdownEditors.add(shell);
-  shell.dataset.editorReady = 'markdown-it';
-  renderMarkdown(shell);
-  shell.addEventListener('uzu-markdown-editor-change', () => renderMarkdown(shell));
-}
-
-function initCodeEditor(shell) {
-  const mount = shell.querySelector('[data-code-editor-mount]');
-  if (!mount || activeCodeEditors.has(shell)) return;
-  const view = new EditorView({
-    parent: mount,
-    doc: `const theme = {
-  surface: "var(--uzu-surface)",
-  accent: "var(--uzu-fg-strong)"
-};
-
-console.log(theme);`,
-    extensions: [
-      basicSetup,
-      javascript(),
-      EditorView.lineWrapping,
-      EditorView.theme({
-        '&': {
-          minHeight: '260px',
-          color: 'var(--uzu-fg)',
-          backgroundColor: 'var(--uzu-surface)'
-        },
-        '.cm-content': {
-          minHeight: '260px',
-          padding: '14px'
-        },
-        '.cm-gutters': {
-          backgroundColor: 'var(--uzu-surface-soft)',
-          color: 'var(--uzu-muted)',
-          borderRightColor: 'var(--uzu-border)'
-        },
-        '.cm-activeLine': {
-          backgroundColor: 'color-mix(in srgb, var(--uzu-fg-strong) 8%, transparent)'
-        },
-        '.cm-activeLineGutter': {
-          backgroundColor: 'color-mix(in srgb, var(--uzu-fg-strong) 10%, var(--uzu-surface-soft))'
-        },
-        '&.cm-focused': {
-          outline: 'none'
-        },
-        '&.cm-focused .cm-cursor': {
-          borderLeftColor: 'var(--uzu-fg-strong)'
-        },
-        '&.cm-focused .cm-selectionBackground, .cm-selectionBackground': {
-          backgroundColor: 'color-mix(in srgb, var(--uzu-fg-strong) 22%, transparent)'
-        }
-      })
-    ]
-  });
-  activeCodeEditors.set(shell, view);
-  shell.dataset.editorReady = 'codemirror';
-}
-
-function isVisible(element) {
-  return Boolean(element.offsetParent || element.getClientRects().length);
-}
-
-function initVisibleEditors(root = document) {
-  root.querySelectorAll('[data-uzu-rich-editor]').forEach((shell) => {
+function initRichEditors(root = document) {
+  const scope = root instanceof Element || root instanceof Document ? root : document;
+  scope.querySelectorAll('[data-uzu-rich-editor]').forEach((shell) => {
     if (isVisible(shell)) initRichEditor(shell);
   });
-  root.querySelectorAll('[data-uzu-markdown-editor]').forEach((shell) => {
-    if (isVisible(shell)) initMarkdownEditor(shell);
-  });
-  root.querySelectorAll('[data-code-editor-shell]').forEach((shell) => {
-    if (isVisible(shell)) initCodeEditor(shell);
-  });
 }
 
-function initComponentEditors() {
-  initVisibleEditors(document);
+function bootRichEditors() {
+  initRichEditors(document);
   document.addEventListener('uzu-panel-show', (event) => {
-    initVisibleEditors(event.detail?.panel || document);
+    initRichEditors(event.detail?.panel || event.target);
   });
-  window.addEventListener('resize', () => initVisibleEditors(document));
+  window.addEventListener('resize', () => initRichEditors(document));
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initComponentEditors, { once: true });
+  document.addEventListener('DOMContentLoaded', bootRichEditors, { once: true });
 } else {
-  initComponentEditors();
+  bootRichEditors();
 }
 
-export { initComponentEditors };
+window.UsuzumiComponentRichEditor = {
+  initRichEditor,
+  initRichEditors
+};
+
+export { initRichEditor, initRichEditors };

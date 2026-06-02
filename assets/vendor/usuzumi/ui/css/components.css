@@ -1,0 +1,324 @@
+.uzu-button {
+  min-height: 40px;
+  padding: 8px 18px 9px;
+  border: 1px solid color-mix(in srgb, var(--uzu-border) 86%, var(--uzu-fg-strong));
+  border-radius: var(--uzu-radius-standard);
+  background: color-mix(in srgb, var(--uzu-surface) 72%, transparent);
+  color: var(--uzu-fg-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: 0;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  appearance: none;
+  transition: background var(--uzu-motion-base) var(--uzu-ease-standard), border-color var(--uzu-motion-base) var(--uzu-ease-standard), color var(--uzu-motion-base) var(--uzu-ease-standard);
+}
+
+.uzu-button:hover {
+  border-color: color-mix(in srgb, var(--uzu-fg-strong) 38%, var(--uzu-border));
+  background: var(--uzu-surface);
+  color: var(--uzu-fg-strong);
+}
+
+.uzu-app a.uzu-button,
+.uzu-scope a.uzu-button {
+  color: var(--uzu-fg-strong);
+  text-decoration: none;
+}
+
+.uzu-app a.uzu-button:hover,
+.uzu-scope a.uzu-button:hover {
+  color: var(--uzu-fg-strong);
+  text-decoration: none;
+}
+
+.uzu-button:disabled,
+.uzu-button[aria-disabled="true"],
+.uzu-button.is-disabled,
+.uzu-icon-button:disabled,
+.uzu-icon-button[aria-disabled="true"],
+.uzu-icon-button.is-disabled,
+.uzu-tab:disabled,
+.uzu-tab[aria-disabled="true"],
+.uzu-segment:disabled,
+.uzu-segment[aria-disabled="true"] {
+  opacity: .48;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+}
+
+.uzu-button.is-loading {
+  cursor: progress;
+}
+
+.uzu-button.is-loading::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid currentColor;
+  border-right-color: transparent;
+  border-radius: var(--uzu-radius-pill);
+  flex: 0 0 auto;
+  animation: uzu-spin 720ms linear infinite;
+}
+
+.uzu-button-primary {
+  border-color: var(--uzu-action-bg);
+  background: var(--uzu-action-bg);
+  color: var(--uzu-action-fg);
+}
+
+.uzu-app a.uzu-button-primary,
+.uzu-scope a.uzu-button-primary {
+  color: var(--uzu-action-fg);
+}
+
+.uzu-button-primary:hover {
+  border-color: var(--uzu-action-bg);
+  background: color-mix(in srgb, var(--uzu-action-bg) 92%, var(--uzu-surface));
+  color: var(--uzu-action-fg);
+}
+
+.uzu-app a.uzu-button-primary:hover,
+.uzu-scope a.uzu-button-primary:hover {
+  color: var(--uzu-action-fg);
+}
+
+.uzu-button-ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--uzu-muted);
+}
+
+.uzu-button-ghost:hover {
+  border-color: color-mix(in srgb, var(--uzu-fg-strong) 18%, transparent);
+  background: color-mix(in srgb, var(--uzu-surface-soft) 58%, transparent);
+  color: var(--uzu-fg-strong);
+}
+
+.uzu-button-danger {
+  border-color: color-mix(in srgb, var(--uzu-danger) 35%, var(--uzu-border));
+  background: var(--uzu-danger-bg);
+  color: var(--uzu-danger);
+}
+
+.uzu-button-danger:hover {
+  border-color: color-mix(in srgb, var(--uzu-danger) 52%, var(--uzu-border));
+  background: color-mix(in srgb, var(--uzu-danger-bg) 74%, var(--uzu-surface));
+  color: var(--uzu-danger);
+}
+
+.uzu-button svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+  flex: 0 0 auto;
+}
+
+.uzu-app .uzu-button,
+.uzu-scope .uzu-button {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.uzu-app a.uzu-button-ghost,
+.uzu-scope a.uzu-button-ghost,
+.uzu-app a.uzu-button-ghost:hover,
+.uzu-scope a.uzu-button-ghost:hover {
+  color: var(--uzu-muted);
+}
+
+.uzu-app a.uzu-button-danger,
+.uzu-scope a.uzu-button-danger,
+.uzu-app a.uzu-button-danger:hover,
+.uzu-scope a.uzu-button-danger:hover {
+  color: var(--uzu-danger);
+}
+
+.uzu-text-link {
+  color: var(--uzu-fg-strong);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  line-height: 1.35;
+  text-decoration: underline;
+  text-decoration-color: var(--uzu-soft);
+  text-underline-offset: 3px;
+}
+
+.uzu-text-link:hover {
+  text-decoration-color: var(--uzu-fg-strong);
+}
+
+.uzu-icon-button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--uzu-border);
+  border-radius: var(--uzu-radius-pill);
+  background: var(--uzu-control-bg);
+  color: var(--uzu-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  appearance: none;
+  backdrop-filter: blur(10px);
+  transition: color var(--uzu-motion-base) var(--uzu-ease-standard), border-color var(--uzu-motion-base) var(--uzu-ease-standard), background var(--uzu-motion-base) var(--uzu-ease-standard);
+}
+
+.uzu-icon-button:hover {
+  color: var(--uzu-fg-strong);
+  border-color: var(--uzu-border-strong);
+}
+
+.uzu-icon-button svg {
+  width: 17px;
+  height: 17px;
+  display: block;
+}
+
+.uzu-toolbar {
+  padding: 10px;
+  border: 1px solid var(--uzu-border);
+  border-radius: var(--uzu-radius-medium);
+  background: color-mix(in srgb, var(--uzu-surface-soft) 62%, var(--uzu-surface));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.uzu-toolbar-group {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.uzu-breadcrumb {
+  margin: 0;
+  padding: 0;
+  color: var(--uzu-muted);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 1.45;
+  list-style: none;
+}
+
+.uzu-breadcrumb li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.uzu-breadcrumb li:not(:last-child)::after {
+  content: "/";
+  color: var(--uzu-soft);
+}
+
+.uzu-breadcrumb a {
+  color: var(--uzu-muted);
+  text-decoration: none;
+}
+
+.uzu-breadcrumb a:hover {
+  color: var(--uzu-fg-strong);
+}
+
+.uzu-breadcrumb [aria-current="page"] {
+  color: var(--uzu-fg-strong);
+}
+
+.uzu-theme-toggle .uzu-icon-sun,
+.uzu-theme-toggle.is-dark .uzu-icon-moon {
+  display: none;
+}
+
+.uzu-theme-toggle.is-dark .uzu-icon-sun {
+  display: block;
+}
+
+.uzu-theme-toggle.is-auto {
+  gap: 0;
+}
+
+.uzu-theme-toggle.is-auto .uzu-icon-moon,
+.uzu-theme-toggle.is-auto .uzu-icon-sun {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.uzu-theme-toggle.is-auto .uzu-icon-moon {
+  transform: translateX(3px);
+}
+
+.uzu-theme-toggle.is-auto .uzu-icon-sun {
+  transform: translateX(-3px);
+}
+
+.uzu-floating-controls {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 20;
+  display: flex;
+  gap: 8px;
+}
+
+.uzu-card {
+  border: 1px solid var(--uzu-border);
+  border-radius: var(--uzu-radius-micro);
+  background: var(--uzu-surface);
+  padding: 18px;
+}
+
+.uzu-card-muted {
+  border-color: var(--uzu-border-soft);
+  background: var(--uzu-surface-soft);
+}
+
+.uzu-stat {
+  min-width: 0;
+  padding: 16px 18px;
+  border: 1px solid var(--uzu-border);
+  border-radius: var(--uzu-radius-micro);
+  background: var(--uzu-surface);
+  display: grid;
+  gap: 6px;
+}
+
+.uzu-stat-label {
+  margin: 0;
+  color: var(--uzu-subtle);
+  font-size: 12px;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.uzu-stat-value {
+  margin: 0;
+  color: var(--uzu-fg-strong);
+  font-size: 34px;
+  line-height: 1.05;
+}
+
+.uzu-stat-note {
+  margin: 0;
+  color: var(--uzu-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}

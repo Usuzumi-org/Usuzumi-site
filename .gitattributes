@@ -1,1 +1,6 @@
-components/assets/editor-engines.js linguist-generated=true
+assets/vendor/usuzumi/** linguist-generated=true
+components/assets/code-editor.js linguist-generated=true
+components/assets/code-highlight.js linguist-generated=true
+components/assets/editor-loader.js linguist-generated=true
+components/assets/markdown-editor.js linguist-generated=true
+components/assets/rich-editor.js linguist-generated=true

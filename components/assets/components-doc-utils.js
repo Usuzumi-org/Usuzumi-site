@@ -7,7 +7,7 @@
       if (!part) return;
       if (part.startsWith('`') && part.endsWith('`') && part.length > 2) {
         const code = document.createElement('code');
-        code.className = 'uzu-code uzu-doc-inline-code';
+        code.className = 'uzu-code uzu-reference-inline-code';
         code.textContent = part.slice(1, -1);
         parent.append(code);
         return;
@@ -44,7 +44,7 @@
 
   function createDocList(items = []) {
     const list = document.createElement('ul');
-    list.className = 'uzu-doc-tutorial-list';
+    list.className = 'uzu-reference-list';
     items.forEach((item) => {
       const li = document.createElement('li');
       const pair = pairValue(item);
@@ -97,7 +97,7 @@
 
   function createDocCodeBlock(codeText, language = '') {
     const shell = document.createElement('div');
-    shell.className = 'uzu-code-block uzu-doc-tutorial-code';
+    shell.className = 'uzu-code-block uzu-reference-code';
     const pre = document.createElement('pre');
     pre.className = 'uzu-code-block-body uzu-scroll';
     const code = document.createElement('code');

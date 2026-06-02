@@ -1,0 +1,82 @@
+﻿.uzu-hidden {
+  display: none !important;
+}
+
+.uzu-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.uzu-flex {
+  display: flex;
+}
+
+.uzu-wrap {
+  flex-wrap: wrap;
+}
+
+.uzu-break-anywhere {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.uzu-center {
+  display: grid;
+  place-items: center;
+}
+
+.uzu-gap-2 {
+  gap: 8px;
+}
+
+.uzu-gap-3 {
+  gap: 12px;
+}
+
+.uzu-gap-4 {
+  gap: 16px;
+}
+
+.uzu-gap-5 {
+  gap: 20px;
+}
+
+.uzu-mt-block {
+  margin-top: var(--uzu-card-block-gap);
+}
+
+.uzu-no-border {
+  border: 0 !important;
+}
+
+.uzu-surface {
+  background: var(--uzu-surface);
+}
+
+.uzu-surface-soft {
+  background: var(--uzu-surface-soft);
+}
+
+.uzu-surface-muted {
+  background: var(--uzu-surface-muted);
+}
+
+html[data-uzu-lang="en"] .uzu-app [data-lang="zh"],
+html[data-language="en"] .uzu-app [data-lang="zh"],
+.uzu-app[data-uzu-lang="en"] [data-lang="zh"],
+.uzu-scope[data-uzu-lang="en"] [data-lang="zh"],
+.uzu-scope[data-language="en"] [data-lang="zh"],
+html[data-uzu-lang="zh"] .uzu-app [data-lang="en"],
+html[data-language="zh"] .uzu-app [data-lang="en"],
+.uzu-app[data-uzu-lang="zh"] [data-lang="en"],
+.uzu-scope[data-uzu-lang="zh"] [data-lang="en"],
+.uzu-scope[data-language="zh"] [data-lang="en"] {
+  display: none !important;
+}

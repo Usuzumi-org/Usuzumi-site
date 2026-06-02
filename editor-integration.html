@@ -4,66 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Usuzumi Editor Integration</title>
-  <link rel="stylesheet" href="./node_modules/usuzumi/ui/usuzumi.css">
-  <link rel="stylesheet" href="./node_modules/usuzumi/ui/usuzumi-signature.css">
-  <script src="./node_modules/usuzumi/ui/usuzumi.js" defer></script>
-  <style>
-    .uzu-guide-layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 28px;
-    }
-
-    .uzu-guide-section {
-      display: grid;
-      gap: 18px;
-    }
-
-    .uzu-guide-code {
-      --uzu-code-block-max-height: 520px;
-    }
-
-    .uzu-guide-table .uzu-code {
-      white-space: normal;
-      overflow-wrap: anywhere;
-    }
-
-    .uzu-guide-flow {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .uzu-guide-step {
-      min-width: 0;
-      padding: 14px;
-      border: 1px solid var(--uzu-border);
-      border-radius: var(--uzu-radius-micro);
-      background: var(--uzu-surface);
-      display: grid;
-      gap: 8px;
-    }
-
-    .uzu-guide-step strong {
-      color: var(--uzu-fg-strong);
-      font-size: 13px;
-      font-weight: 500;
-      line-height: 1.35;
-    }
-
-    .uzu-guide-step p {
-      margin: 0;
-      color: var(--uzu-muted);
-      font-size: 13px;
-      line-height: 1.55;
-    }
-
-    @media (max-width: 780px) {
-      .uzu-guide-flow {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="./assets/vendor/usuzumi/ui/usuzumi.css">
+  <link rel="stylesheet" href="./assets/vendor/usuzumi/ui/usuzumi-signature.css">
+  <script src="./assets/vendor/usuzumi/ui/usuzumi.js" defer></script>
 </head>
 <body class="uzu-app">
   <div class="uzu-floating-controls" aria-label="Page settings">
@@ -85,6 +28,7 @@
       <nav class="uzu-nav" aria-label="Site navigation">
         <a href="index.html"><span data-lang="zh">首页</span><span data-lang="en">Home</span></a>
         <a href="components.html"><span data-lang="zh">组件</span><span data-lang="en">Components</span></a>
+        <a href="components.html#component-page"><span data-lang="zh">文档</span><span data-lang="en">Docs</span></a>
         <a href="editor-integration.html" aria-current="page"><span data-lang="zh">编辑器接入</span><span data-lang="en">Editor integration</span></a>
         <a href="https://github.com/Usuzumi-org/Usuzumi">Github</a>
       </nav>
@@ -95,19 +39,19 @@
         <p class="uzu-section-label">Guide</p>
         <h1 class="uzu-section-title"><span data-lang="zh">外部编辑器接入指南</span><span data-lang="en">External Editor Integration</span></h1>
         <p class="uzu-body-large">
-          <span data-lang="zh">Usuzumi 负责编辑区外观、工具栏按钮和事件桥。文档模型、快捷键、历史记录、语法服务和完整 Markdown 解析交给选定的编辑器库：Tiptap、markdown-it 和 CodeMirror 6。</span>
-          <span data-lang="en">Usuzumi owns the editor surface, toolbar buttons, and event bridge. Document models, shortcuts, history, language services, and full Markdown parsing stay in the chosen editor libraries: Tiptap, markdown-it, and CodeMirror 6.</span>
+          <span data-lang="zh">Usuzumi 负责编辑器外壳、工具栏和状态桥接；Tiptap、markdown-it 和 CodeMirror 6 负责各自的编辑与渲染能力。</span>
+          <span data-lang="en">Usuzumi handles the shell, toolbar, and event bridge; Tiptap, markdown-it, and CodeMirror 6 handle their own editing and rendering jobs.</span>
         </p>
       </div>
     </section>
 
-    <section class="uzu-section uzu-guide-section" aria-labelledby="editor-boundary-title">
+    <section class="uzu-section" aria-labelledby="editor-boundary-title">
       <div class="uzu-section-head">
         <p class="uzu-section-label"><span data-lang="zh">边界</span><span data-lang="en">Boundary</span></p>
-        <h2 class="uzu-section-title" id="editor-boundary-title"><span data-lang="zh">先决定谁负责哪一层。</span><span data-lang="en">Decide which layer owns what.</span></h2>
+        <h2 class="uzu-section-title" id="editor-boundary-title"><span data-lang="zh">先分清每一层负责什么</span><span data-lang="en">Decide which layer owns what.</span></h2>
       </div>
       <div class="uzu-table-wrap">
-        <table class="uzu-table uzu-guide-table">
+        <table class="uzu-table">
           <thead>
             <tr>
               <th><span data-lang="zh">能力</span><span data-lang="en">Capability</span></th>
@@ -118,17 +62,17 @@
           <tbody>
             <tr>
               <td><span data-lang="zh">富文本</span><span data-lang="en">Rich text</span></td>
-              <td><code class="uzu-code">.uzu-editor</code>、工具栏、<code class="uzu-code">uzu-editor-command</code></td>
-              <td><span data-lang="zh">Tiptap 管理 schema、selection、history 和命令执行。</span><span data-lang="en">Tiptap owns schema, selection, history, and commands.</span></td>
+              <td><code class="uzu-code uzu-break-anywhere">.uzu-editor</code>、工具栏、<code class="uzu-code uzu-break-anywhere">data-uzu-editor-command</code></td>
+              <td><span data-lang="zh">Tiptap 管理 schema、selection、history 和 commands。</span><span data-lang="en">Tiptap owns schema, selection, history, and commands.</span></td>
             </tr>
             <tr>
               <td><span data-lang="zh">Markdown</span><span data-lang="en">Markdown</span></td>
-              <td><code class="uzu-code">.uzu-markdown-editor</code>、源码区、预览区、change/render 事件</td>
-              <td><span data-lang="zh">markdown-it 管 Markdown 渲染和安全策略。</span><span data-lang="en">markdown-it owns Markdown rendering and safety policy.</span></td>
+              <td><code class="uzu-code uzu-break-anywhere">.uzu-markdown-editor</code>、源码区、预览区</td>
+              <td><span data-lang="zh">markdown-it 负责渲染、插件和安全策略。</span><span data-lang="en">markdown-it handles rendering, plugins, and sanitization policy.</span></td>
             </tr>
             <tr>
               <td><span data-lang="zh">代码编辑</span><span data-lang="en">Code editing</span></td>
-              <td><code class="uzu-code">.uzu-code-editor</code> 或 <code class="uzu-code">.uzu-editor</code> 外壳</td>
+              <td><code class="uzu-code uzu-break-anywhere">.uzu-code-editor</code> 外壳</td>
               <td><span data-lang="zh">CodeMirror 6 提供高亮、补全、诊断和多光标。</span><span data-lang="en">CodeMirror 6 provides highlighting, completion, diagnostics, and multi-cursor editing.</span></td>
             </tr>
           </tbody>
@@ -136,30 +80,38 @@
       </div>
     </section>
 
-    <section class="uzu-section uzu-guide-section" aria-labelledby="rich-title">
+    <section class="uzu-section" aria-labelledby="rich-title">
       <div class="uzu-section-head">
         <p class="uzu-section-label">Rich text</p>
-        <h2 class="uzu-section-title" id="rich-title"><span data-lang="zh">富文本：把工具栏命令交给编辑器实例。</span><span data-lang="en">Rich text: pass toolbar commands to the editor instance.</span></h2>
+        <h2 class="uzu-section-title" id="rich-title"><span data-lang="zh">富文本：把工具栏命令交给编辑器实例</span><span data-lang="en">Rich text: pass toolbar commands to the editor instance.</span></h2>
       </div>
-      <div class="uzu-guide-flow">
-        <article class="uzu-guide-step">
-          <strong>1. HTML</strong>
-          <p><span data-lang="zh">外层加 <code class="uzu-code">data-uzu-rich-editor</code>，工具栏按钮声明命令名。</span><span data-lang="en">Add <code class="uzu-code">data-uzu-rich-editor</code> and declare command names on toolbar buttons.</span></p>
+      <div class="uzu-grid uzu-grid-4">
+        <article class="uzu-card">
+          <div class="uzu-title-pair">
+            <h3>HTML</h3>
+            <p><span data-lang="zh">外层加 <code class="uzu-code">data-uzu-rich-editor</code>，按钮上声明命令名。</span><span data-lang="en">Add <code class="uzu-code">data-uzu-rich-editor</code> and declare command names on toolbar buttons.</span></p>
+          </div>
         </article>
-        <article class="uzu-guide-step">
-          <strong>2. Mount</strong>
-          <p><span data-lang="zh">把 Tiptap 挂到 <code class="uzu-code">data-uzu-editor-surface</code>。</span><span data-lang="en">Mount Tiptap into <code class="uzu-code">data-uzu-editor-surface</code>.</span></p>
+        <article class="uzu-card">
+          <div class="uzu-title-pair">
+            <h3>Mount</h3>
+            <p><span data-lang="zh">把 Tiptap 挂到 <code class="uzu-code">data-uzu-editor-surface</code>。</span><span data-lang="en">Mount Tiptap into <code class="uzu-code">data-uzu-editor-surface</code>.</span></p>
+          </div>
         </article>
-        <article class="uzu-guide-step">
-          <strong>3. Events</strong>
-          <p><span data-lang="zh">监听 <code class="uzu-code">uzu-editor-command</code>，根据 <code class="uzu-code">event.detail.command</code> 执行命令。</span><span data-lang="en">Listen for <code class="uzu-code">uzu-editor-command</code> and execute by <code class="uzu-code">event.detail.command</code>.</span></p>
+        <article class="uzu-card">
+          <div class="uzu-title-pair">
+            <h3>Events</h3>
+            <p><span data-lang="zh">监听 <code class="uzu-code">uzu-editor-command</code>，按 <code class="uzu-code">event.detail.command</code> 执行。</span><span data-lang="en">Listen for <code class="uzu-code">uzu-editor-command</code> and execute by <code class="uzu-code">event.detail.command</code>.</span></p>
+          </div>
         </article>
-        <article class="uzu-guide-step">
-          <strong>4. State</strong>
-          <p><span data-lang="zh">选区变化时同步 <code class="uzu-code">aria-pressed</code> 和 <code class="uzu-code">.is-active</code>。</span><span data-lang="en">Sync <code class="uzu-code">aria-pressed</code> and <code class="uzu-code">.is-active</code> when selection changes.</span></p>
+        <article class="uzu-card">
+          <div class="uzu-title-pair">
+            <h3>State</h3>
+            <p><span data-lang="zh">选择变化时同步 <code class="uzu-code">aria-pressed</code> 和 <code class="uzu-code">.is-active</code>。</span><span data-lang="en">Sync <code class="uzu-code">aria-pressed</code> and <code class="uzu-code">.is-active</code> when selection changes.</span></p>
+          </div>
         </article>
       </div>
-      <div class="uzu-code-block uzu-guide-code">
+      <div class="uzu-code-block" style="--uzu-code-block-max-height: 520px">
         <pre class="uzu-code-block-body uzu-scroll"><code>&lt;section class="uzu-editor" data-uzu-rich-editor&gt;
   &lt;div class="uzu-editor-toolbar" role="toolbar" aria-label="Text tools"&gt;
     &lt;button class="uzu-toolbar-button" type="button" data-uzu-editor-command="bold" data-uzu-editor-toggle&gt;B&lt;/button&gt;
@@ -173,11 +125,10 @@
           <span data-uzu-code-copy-label>Copy</span>
         </button>
       </div>
-      <div class="uzu-code-block uzu-guide-code">
+      <div class="uzu-code-block" style="--uzu-code-block-max-height: 520px">
         <pre class="uzu-code-block-body uzu-scroll"><code>const shell = document.querySelector('[data-uzu-rich-editor]');
 const surface = shell.querySelector('[data-uzu-editor-surface]');
 
-// Example shape: replace this with your Tiptap instance.
 const editor = createRichTextEditor({
   element: surface,
   content: '&lt;p&gt;Start writing.&lt;/p&gt;',
@@ -204,18 +155,18 @@ shell.addEventListener('uzu-editor-command', (event) =&gt; {
       </div>
     </section>
 
-    <section class="uzu-section uzu-guide-section" aria-labelledby="markdown-title">
+    <section class="uzu-section" aria-labelledby="markdown-title">
       <div class="uzu-section-head">
         <p class="uzu-section-label">Markdown</p>
-        <h2 class="uzu-section-title" id="markdown-title"><span data-lang="zh">Markdown：源码编辑和预览渲染分开接。</span><span data-lang="en">Markdown: wire source editing and preview rendering separately.</span></h2>
+        <h2 class="uzu-section-title" id="markdown-title"><span data-lang="zh">Markdown：源码编辑和预览渲染分开接</span><span data-lang="en">Markdown: wire source editing and preview rendering separately.</span></h2>
       </div>
       <div class="uzu-alert uzu-alert-info">
         <div class="uzu-title-pair">
           <h3><span data-lang="zh">内置渲染器的定位</span><span data-lang="en">Built-in renderer scope</span></h3>
-          <p><span data-lang="zh"><code class="uzu-code">data-uzu-markdown-render</code> 只适合轻量预览。需要表格、脚注、语法扩展、清洗策略或服务端一致输出时，把预览交给项目自己的 Markdown 管线。</span><span data-lang="en"><code class="uzu-code">data-uzu-markdown-render</code> is for light previews. Use markdown-it for tables, plugins, sanitization, and server/client parity.</span></p>
+          <p><span data-lang="zh"><code class="uzu-code">data-uzu-markdown-render</code> 只适合轻量预览。表格、脚注、插件、安全策略和服务端一致输出交给 markdown-it。</span><span data-lang="en"><code class="uzu-code">data-uzu-markdown-render</code> is for light previews. Use markdown-it for tables, footnotes, plugins, sanitization, and server/client parity.</span></p>
         </div>
       </div>
-      <div class="uzu-code-block uzu-guide-code">
+      <div class="uzu-code-block" style="--uzu-code-block-max-height: 520px">
         <pre class="uzu-code-block-body uzu-scroll"><code>&lt;section class="uzu-editor uzu-markdown-editor" data-uzu-markdown-editor&gt;
   &lt;textarea class="uzu-markdown-source" data-uzu-markdown-source&gt;# Draft&lt;/textarea&gt;
   &lt;div class="uzu-markdown-preview uzu-prose" data-uzu-markdown-preview&gt;&lt;/div&gt;
@@ -225,12 +176,11 @@ shell.addEventListener('uzu-editor-command', (event) =&gt; {
           <span data-uzu-code-copy-label>Copy</span>
         </button>
       </div>
-      <div class="uzu-code-block uzu-guide-code">
+      <div class="uzu-code-block" style="--uzu-code-block-max-height: 520px">
         <pre class="uzu-code-block-body uzu-scroll"><code>const shell = document.querySelector('[data-uzu-markdown-editor]');
 const source = shell.querySelector('[data-uzu-markdown-source]');
 const preview = shell.querySelector('[data-uzu-markdown-preview]');
 
-// markdown-it renders the preview from the source value.
 function render(value) {
   preview.innerHTML = markdownIt.render(value);
   shell.dispatchEvent(new CustomEvent('uzu-markdown-editor-render', {
@@ -251,22 +201,22 @@ render(source.value);</code></pre>
       </div>
     </section>
 
-    <section class="uzu-section uzu-guide-section" aria-labelledby="code-title">
+    <section class="uzu-section" aria-labelledby="code-title">
       <div class="uzu-section-head">
         <p class="uzu-section-label">Code editor</p>
-        <h2 class="uzu-section-title" id="code-title"><span data-lang="zh">代码编辑：用 Usuzumi 定边界，用编辑器库接能力。</span><span data-lang="en">Code editing: use Usuzumi for the boundary and an editor library for capability.</span></h2>
+        <h2 class="uzu-section-title" id="code-title"><span data-lang="zh">代码编辑：外壳用 Usuzumi，能力交给编辑器库</span><span data-lang="en">Code editing: use Usuzumi for the boundary and an editor library for capability.</span></h2>
       </div>
       <div class="uzu-grid uzu-grid-2">
         <article class="uzu-card">
           <div class="uzu-title-pair">
             <h3><span data-lang="zh">短内容</span><span data-lang="en">Short content</span></h3>
-            <p><span data-lang="zh">配置片段、命令文本和小段代码可以直接用 <code class="uzu-code">textarea.uzu-code-editor</code>。</span><span data-lang="en">Use <code class="uzu-code">textarea.uzu-code-editor</code> for configuration snippets, command text, and short code.</span></p>
+            <p><span data-lang="zh">配置片段、命令文本和短代码可以直接用 <code class="uzu-code">textarea.uzu-code-editor</code>。</span><span data-lang="en">Use <code class="uzu-code">textarea.uzu-code-editor</code> for configuration snippets, command text, and short code.</span></p>
           </div>
         </article>
         <article class="uzu-card">
           <div class="uzu-title-pair">
             <h3><span data-lang="zh">长内容</span><span data-lang="en">Long content</span></h3>
-            <p><span data-lang="zh">语法高亮、补全、诊断和大文件滚动交给 CodeMirror 6，再把外层放进 <code class="uzu-code">.uzu-editor</code>。</span><span data-lang="en">Let CodeMirror 6 handle highlighting, completion, diagnostics, and large-file scrolling, then place it inside <code class="uzu-code">.uzu-editor</code>.</span></p>
+            <p><span data-lang="zh">语法高亮、补全、诊断和大文件滚动交给 CodeMirror 6，再放进 <code class="uzu-code">.uzu-editor</code>。</span><span data-lang="en">Let CodeMirror 6 handle highlighting, completion, diagnostics, and large-file scrolling, then place it inside <code class="uzu-code">.uzu-editor</code>.</span></p>
           </div>
         </article>
       </div>

@@ -171,13 +171,13 @@
 
   function createGuidance(info, key) {
     const guidance = document.createElement('aside');
-    guidance.className = 'uzu-doc-guidance uzu-doc-tutorial';
+    guidance.className = 'uzu-reference-card uzu-reference-tutorial';
     const title = document.createElement('h3');
     title.append(textPair('使用教程', 'Usage Guide'));
     guidance.append(title);
     buildTutorialSections(info, key).forEach((section) => {
       const article = document.createElement('section');
-      article.className = 'uzu-doc-tutorial-section';
+      article.className = 'uzu-reference-section';
       const heading = document.createElement('h4');
       const sectionTitle = pairValue(section.title, '基本用法', 'Basic Usage');
       heading.append(textPair(sectionTitle[0], sectionTitle[1]));

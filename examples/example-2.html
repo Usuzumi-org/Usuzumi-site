@@ -1,5 +1,5 @@
-﻿<!doctype html>
-<html class="uzu-root" lang="zh-CN" data-theme="light" data-uzu-theme-key="app-introduction-theme" data-language="zh">
+<!doctype html>
+<html class="uzu-root" lang="zh-CN" data-theme="light" data-theme-mode="light" data-uzu-theme="light" data-uzu-theme-key="app-introduction-theme" data-language="zh">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,167 +19,8 @@
       root.setAttribute("data-uzu-theme", theme);
     })();
   </script>
-  <link rel="stylesheet" href="../node_modules/usuzumi/ui/usuzumi.css">
-  <script src="../node_modules/usuzumi/ui/usuzumi.js" defer></script>
-  <style>
-    .uzu-app-preview {
-      border: 1px solid var(--uzu-border);
-      border-radius: var(--uzu-radius-medium);
-      background: var(--uzu-surface);
-      padding: 18px;
-    }
-
-    .uzu-app-window {
-      min-height: 560px;
-      border: 1px solid var(--uzu-border-soft);
-      border-radius: var(--uzu-radius-micro);
-      background: var(--uzu-bg);
-      overflow: hidden;
-      display: grid;
-      grid-template-rows: auto 1fr;
-    }
-
-    .uzu-window-bar {
-      height: 42px;
-      padding: 0 14px;
-      border-bottom: 1px solid var(--uzu-border-soft);
-      color: var(--uzu-soft);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 12px;
-      letter-spacing: 0;
-    }
-
-    .uzu-window-dots {
-      display: flex;
-      gap: 6px;
-    }
-
-    .uzu-window-dots span {
-      width: 7px;
-      height: 7px;
-      border-radius: var(--uzu-radius-pill);
-      background: var(--uzu-border);
-    }
-
-    .uzu-mock-content {
-      padding: 22px;
-      display: grid;
-      gap: 18px;
-    }
-
-    .uzu-mock-panel,
-    .uzu-mock-stat {
-      padding: 18px;
-      border: 1px solid var(--uzu-border);
-      border-radius: var(--uzu-radius-micro);
-      background: var(--uzu-surface);
-    }
-
-    .uzu-mock-stat-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .uzu-today-head {
-      margin-bottom: 18px;
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
-    }
-
-    .uzu-mock-date {
-      margin: 4px 0 0;
-      color: var(--uzu-fg-strong);
-      font-size: 30px;
-      line-height: 1.1;
-    }
-
-    .uzu-timeline {
-      display: grid;
-      gap: 12px;
-    }
-
-    .uzu-task {
-      padding-top: 12px;
-      border-top: 1px solid var(--uzu-border-soft);
-      display: grid;
-      grid-template-columns: 52px minmax(0, 1fr);
-      gap: 14px;
-    }
-
-    .uzu-task.is-current {
-      margin-left: -10px;
-      padding-left: 9px;
-      border-left: 1px solid var(--uzu-fg-strong);
-    }
-
-    .uzu-task-time {
-      color: var(--uzu-subtle);
-      font-size: 13px;
-      line-height: 1.45;
-    }
-
-    .uzu-task-title {
-      margin: 0 0 var(--uzu-card-title-gap);
-      color: var(--uzu-fg-strong);
-      font-size: 15px;
-      font-weight: 400;
-      line-height: 1.3;
-    }
-
-    .uzu-task-note {
-      margin: 0;
-      color: var(--uzu-muted);
-      font-size: 13px;
-      line-height: 1.45;
-    }
-
-    .uzu-metric-value {
-      margin: var(--uzu-card-block-gap) 0 var(--uzu-card-title-gap);
-      color: var(--uzu-fg-strong);
-      font-size: 30px;
-      line-height: 1;
-    }
-
-    @media (forced-colors: active) {
-      .uzu-app-preview,
-      .uzu-app-window,
-      .uzu-mock-panel,
-      .uzu-mock-stat {
-        border: 1px solid CanvasText;
-        background: Canvas;
-        color: CanvasText;
-        box-shadow: none;
-      }
-    }
-
-    @media (max-width: 640px) {
-      .uzu-app-preview {
-        padding: 10px;
-      }
-
-      .uzu-app-window {
-        min-height: 500px;
-      }
-
-      .uzu-mock-content {
-        padding: 16px;
-      }
-
-      .uzu-mock-stat-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .uzu-task {
-        grid-template-columns: 48px minmax(0, 1fr);
-        gap: 12px;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="../assets/vendor/usuzumi/ui/usuzumi.css">
+  <script src="../assets/vendor/usuzumi/ui/usuzumi.js" defer></script>
 </head>
 <body class="uzu-app">
   <div class="uzu-floating-controls" aria-label="Page settings">
@@ -231,28 +72,51 @@
         </div>
       </div>
 
-      <div class="uzu-app-preview" aria-label="App interface mockup">
-        <div class="uzu-app-window">
-          <div class="uzu-window-bar">
-            <div class="uzu-window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
-            <span>APP</span>
+      <div class="uzu-card">
+        <div class="uzu-stack uzu-stack-tight">
+          <div class="uzu-stack uzu-stack-tight">
+            <div class="uzu-flex uzu-flex-between">
+              <div class="uzu-title-pair">
+                <h3>Overview</h3>
+                <p>Launch</p>
+              </div>
+              <span class="uzu-badge uzu-badge-success">Live</span>
+            </div>
+            <div class="uzu-list">
+              <div class="uzu-list-item">
+                <div class="uzu-list-meta">01</div>
+                <div class="uzu-title-pair">
+                  <h3>Capture</h3>
+                  <p>Primary user input</p>
+                </div>
+              </div>
+              <div class="uzu-list-item">
+                <div class="uzu-list-meta">02</div>
+                <div class="uzu-title-pair">
+                  <h3>Organize</h3>
+                  <p>Readable structure</p>
+                </div>
+              </div>
+              <div class="uzu-list-item">
+                <div class="uzu-list-meta">03</div>
+                <div class="uzu-title-pair">
+                  <h3>Share</h3>
+                  <p>Export or handoff</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="uzu-mock-content">
-            <div class="uzu-mock-panel">
-              <div class="uzu-today-head">
-                <div><p class="uzu-micro-label">Overview</p><p class="uzu-mock-date">Launch</p></div>
-                <span class="uzu-badge uzu-badge-success">Live</span>
-              </div>
-              <div class="uzu-timeline">
-                <div class="uzu-task is-current"><span class="uzu-task-time">01</span><div><p class="uzu-task-title">Capture</p><p class="uzu-task-note">Primary user input</p></div></div>
-                <div class="uzu-task"><span class="uzu-task-time">02</span><div><p class="uzu-task-title">Organize</p><p class="uzu-task-note">Readable structure</p></div></div>
-                <div class="uzu-task"><span class="uzu-task-time">03</span><div><p class="uzu-task-title">Share</p><p class="uzu-task-note">Export or handoff</p></div></div>
-              </div>
-            </div>
-            <div class="uzu-mock-stat-grid">
-              <div class="uzu-mock-stat"><p class="uzu-micro-label">Signal</p><p class="uzu-metric-value">84%</p><p class="uzu-text uzu-muted"><span data-lang="zh">核心流程完成率</span><span data-lang="en">core flow completion</span></p></div>
-              <div class="uzu-mock-stat"><p class="uzu-micro-label">Trust</p><p class="uzu-metric-value">4.8</p><p class="uzu-text uzu-muted"><span data-lang="zh">用户评分示例</span><span data-lang="en">sample user rating</span></p></div>
-            </div>
+          <div class="uzu-grid uzu-grid-2">
+            <article class="uzu-stat">
+              <p class="uzu-stat-label">Signal</p>
+              <p class="uzu-stat-value">84%</p>
+              <p class="uzu-stat-note"><span data-lang="zh">核心流程完成率</span><span data-lang="en">core flow completion</span></p>
+            </article>
+            <article class="uzu-stat">
+              <p class="uzu-stat-label">Trust</p>
+              <p class="uzu-stat-value">4.8</p>
+              <p class="uzu-stat-note"><span data-lang="zh">用户评分示例</span><span data-lang="en">sample user rating</span></p>
+            </article>
           </div>
         </div>
       </div>
