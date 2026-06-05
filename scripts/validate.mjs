@@ -1,21 +1,93 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import vm from 'node:vm';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ignoredDirs = new Set(['.git', 'node_modules', 'dist', 'build', 'coverage', '.cache', '.tmp']);
-const generatedBundles = new Set([
-  'code-editor.js',
-  'code-highlight.js',
-  'editor-loader.js',
-  'markdown-editor.js',
-  'rich-editor.js'
-]);
-const ignoredFiles = new Set(generatedBundles);
+const ignoredFiles = new Set();
 const textExtensions = new Set(['.css', '.html', '.js', '.md', '.json']);
 const issues = [];
-const editorEngineLeakPattern = /\bEditorView\b|ProseMirror|@tiptap|MarkdownIt|markdown-it|\btiptap\b|shiki|createHighlighterCore|@codemirror/i;
+const privateHighlighterPattern = new RegExp([
+  '@' + 'lezer',
+  'components/assets/' + 'code-highlight\\.js',
+  'components/runtime/' + 'highlight-deps\\.js',
+  'UsuzumiComponent' + 'CodeHighlight'
+].join('|'), 'i');
+const retiredSiteRuntimeFiles = [
+  'components/assets/components-labels.js',
+  'components/assets/components-doc-utils.js',
+  'components/assets/components-tutorial.js',
+  'components/assets/components-interface-descriptions.js',
+  'components/assets/components-interface-examples.js',
+  'components/assets/components-interface.js',
+  'components/assets/components-demo.js',
+  'components/assets/components.js',
+  'components/assets/editor-loader.entry.js',
+  'components/assets/editor-loader.js',
+  'components/assets/markdown-editor.entry.js',
+  'components/assets/markdown-editor.js',
+  'components/runtime/markdown-editor-deps.js',
+  'components/runtime/package.json',
+  'components/package.json',
+  'components/package-lock.json'
+];
+const retiredSiteRuntimePattern = new RegExp(retiredSiteRuntimeFiles.map((file) => escapeRegExp(file)).join('|'), 'i');
+const retiredComponentPagePattern = /data-uzu-component(?:-docs|-nav)?|components\/assets\/components-(?:notes|interfaces)-[^"']+\.js|uzu-reference|uzu-token|uzu-type|uzu-download-actions|uzu-app-hero|uzu-product|uzu-screen|uzu-feature|initComponentDocs|component-docs/i;
+const componentDocsQualityPatterns = [
+  [/Start with/i, 'generated template copy should be replaced with concrete component guidance'],
+  [/compose the public child structure/i, 'generated template copy should be replaced with concrete component guidance'],
+  [/This component is mainly HTML and CSS/i, 'generated filler copy should be replaced with concrete component guidance'],
+  [/public Usuzumi runtime initializes/i, 'docs should not claim a runtime initializes static-only components'],
+  [/local wrapper/i, 'docs should not describe site-local wrappers as component API'],
+  [/aria-current=&quot;(?:page|step)&quot;=&quot;true/i, 'docs contain an invalid aria-current example'],
+  [/aria-busy on loading region/i, 'docs contain vague or invalid aria-busy guidance'],
+  [/horizontal scroll in \.uzu-table-wrap/i, 'docs should avoid placeholder table-wrapper copy'],
+  [/visible near its trigger/i, 'docs should avoid placeholder positioning copy'],
+  [/data-uzu-dialog-target&gt;/i, 'docs contain an incomplete dialog trigger attribute'],
+  [/\[aria-disabled=&quot;true&quot;\]/i, 'docs contain a selector fragment instead of a concrete disabled example'],
+  [/\[aria-busy=&quot;true&quot;\]/i, 'docs contain a selector fragment instead of a concrete busy example'],
+  [/aria-valuenow=&quot;true/i, 'docs contain an invalid aria-valuenow example'],
+  [/aria-orientation=&quot;true/i, 'docs contain an invalid aria-orientation example']
+];
+const ignoredClassPrefixes = ['is-', 'language-'];
+const scrollbarSurfaces = [
+  'html.uzu-root',
+  'body.uzu-app',
+  '.uzu-scroll',
+  '.uzu-scroll-area',
+  '.uzu-command-list',
+  '.uzu-combobox-list',
+  '.uzu-table-wrap',
+  '.uzu-data-grid-wrap',
+  '.uzu-json-viewer',
+  '.uzu-diff-viewer',
+  '.uzu-code-editor',
+  '.uzu-plain-editor',
+  '.uzu-markdown-source',
+  '.uzu-markdown-preview',
+  '.uzu-editor-surface'
+];
+const scrollbarButtonStates = [
+  '',
+  ':single-button',
+  ':double-button',
+  ':start:decrement',
+  ':start:increment',
+  ':end:decrement',
+  ':end:increment',
+  ':vertical:decrement',
+  ':vertical:increment',
+  ':vertical:start:decrement',
+  ':vertical:start:increment',
+  ':vertical:end:decrement',
+  ':vertical:end:increment',
+  ':horizontal:decrement',
+  ':horizontal:increment',
+  ':horizontal:start:decrement',
+  ':horizontal:start:increment',
+  ':horizontal:end:decrement',
+  ':horizontal:end:increment'
+];
 
 function toPosix(filePath) {
   return path.relative(root, filePath).replaceAll(path.sep, '/');
@@ -89,7 +161,7 @@ function checkCssReferences(filePath, text) {
 }
 
 function checkPublicHtmlClasses(filePath, text) {
-  const allowedClass = /^(?:uzu-|is-|language-|cm-|ProseMirror\b)/;
+  const allowedClass = /^(?:uzu-|is-|language-)/;
   for (const match of text.matchAll(/\bclass=["']([^"']+)["']/gi)) {
     for (const className of match[1].split(/\s+/).filter(Boolean)) {
       if (!allowedClass.test(className)) {
@@ -114,6 +186,23 @@ function cssContainsClass(cssText, className) {
   return new RegExp(`\\.${escapeRegExp(className)}(?:[^_a-zA-Z0-9-]|$)`).test(cssText);
 }
 
+function cssContainsSurfacePseudo(cssText, surface, pseudo) {
+  if (cssText.includes(`${surface}${pseudo}`)) return true;
+  if (!surface.startsWith('.')) return false;
+  const className = surface.slice(1);
+  return new RegExp(`:where\\([^)]*\\.${escapeRegExp(className)}(?:[^_a-zA-Z0-9-]|[^)]*)\\)${escapeRegExp(pseudo)}`).test(cssText);
+}
+
+function getFirstRuleBody(cssText, selectorPart) {
+  const match = cssText.match(new RegExp(`${escapeRegExp(selectorPart)}[\\s\\S]*?\\{([\\s\\S]*?)\\}`));
+  return match ? match[1] : '';
+}
+
+function vendorCssText() {
+  const cssPath = path.join(root, 'assets', 'vendor', 'usuzumi', 'ui', 'usuzumi.css');
+  return existsSync(cssPath) ? readText(cssPath) : '';
+}
+
 function checkGuardrails(filePath, text) {
   const relative = toPosix(filePath);
   if (/href=["']#["']/i.test(text)) report(filePath, 'placeholder href="#" is not allowed');
@@ -126,6 +215,9 @@ function checkGuardrails(filePath, text) {
   if (/uzu-shiki|shiki-pre|shiki-code|--uzu-shiki/i.test(text)) {
     report(filePath, 'syntax highlighting must use native .uzu-code-block interfaces, not site-only shiki classes');
   }
+  if (path.basename(filePath) !== 'validate.mjs' && privateHighlighterPattern.test(text)) {
+    report(filePath, 'syntax highlighting must come from the Usuzumi UI package, not a site-only highlighter bundle');
+  }
   if (/(?:\.|^)uzu-(?:doc|guide)-/i.test(text)) {
     report(filePath, 'site code should not use legacy doc/guide private classes');
   }
@@ -135,37 +227,78 @@ function checkGuardrails(filePath, text) {
   if (relative.endsWith('.html') && /components\/node_modules\/usuzumi/i.test(text)) {
     report(filePath, 'HTML should load Usuzumi from assets/vendor/usuzumi, not ignored node_modules');
   }
-  if (/\.uzu-(?:home|project|app-preview|app-window|window-|mock|today|timeline|task|metric)\b/.test(text)) {
+  if (/\.uzu-(?:home|project|app-preview|app-window|window-|mock|today|timeline|task|metric|reference|token|type|app-hero|product|screen|feature|download-actions)\b/.test(text)) {
     report(filePath, 'site pages should rely on public Usuzumi classes instead of page-private shells');
   }
-  if (relative.startsWith('components/assets/components-notes-') && /"(?:usage|purpose)"\s*:/.test(text)) {
-    report(filePath, 'component notes should use structure, behavior, and tutorialSections instead of usage/purpose fields');
+  if (!relative.startsWith('assets/vendor/') && /\.(?:html|css)$/.test(relative) && /::-webkit-scrollbar|\bscrollbar-(?:button|width|color)\b/i.test(text)) {
+    report(filePath, 'site pages must not define local scrollbar styles; consume the public Usuzumi scrollbar contract');
   }
   if (relative === 'components.html') {
-    if (text.includes('components/assets/editor-engines.js')) report(filePath, 'component page should load split editor bundles through editor-loader.js');
-    if (!text.includes('components/assets/editor-loader.js')) report(filePath, 'component page should load the local editor loader bundle');
-    if (!text.includes('components/assets/code-highlight.js')) report(filePath, 'component page should load the local syntax highlighting bundle');
-    if (/Tiptap mount|markdown-it preview mount|CodeMirror 6 mount/.test(text)) {
-      report(filePath, 'component page editor demos should mount real editors instead of placeholder mount copy');
+    if (retiredComponentPagePattern.test(text)) report(filePath, 'component page should be static consumer markup and must not load component-docs hooks, data files, or page-only classes');
+    if (retiredSiteRuntimePattern.test(text)) report(filePath, 'component page should not load site-owned UI runtime scripts');
+    if (/Tiptap mount|CodeMirror 6 mount/.test(text)) {
+      report(filePath, 'component page should not include retired rich text or code editor mount copy');
     }
+    for (const [pattern, message] of componentDocsQualityPatterns) {
+      if (pattern.test(text)) report(filePath, message);
+    }
+  }
+}
+
+function checkVendorScrollbarContract() {
+  const cssPath = path.join(root, 'assets', 'vendor', 'usuzumi', 'ui', 'usuzumi.css');
+  if (!existsSync(cssPath)) return;
+  const cssText = readText(cssPath);
+  const buttonBody = getFirstRuleBody(cssText, '::-webkit-scrollbar-button');
+  const thumbBody = getFirstRuleBody(cssText, '::-webkit-scrollbar-thumb');
+
+  for (const surface of scrollbarSurfaces) {
+    for (const pseudo of ['::-webkit-scrollbar', '::-webkit-scrollbar-track', '::-webkit-scrollbar-thumb', '::-webkit-scrollbar-corner']) {
+      if (!cssContainsSurfacePseudo(cssText, surface, pseudo)) {
+        report(cssPath, `vendored Usuzumi scrollbar contract does not cover ${surface}${pseudo}`);
+      }
+    }
+    for (const state of scrollbarButtonStates) {
+      const pseudo = `::-webkit-scrollbar-button${state}`;
+      if (!cssContainsSurfacePseudo(cssText, surface, pseudo)) {
+        report(cssPath, `vendored Usuzumi scrollbar contract does not hide ${surface}${pseudo}`);
+      }
+    }
+  }
+
+  const requiredButtonDeclarations = [
+    [/display\s*:\s*none\s*!important/i, 'display: none !important'],
+    [/width\s*:\s*0(?:px)?\s*!important/i, 'width: 0 !important'],
+    [/height\s*:\s*0(?:px)?\s*!important/i, 'height: 0 !important'],
+    [/min-width\s*:\s*0(?:px)?\s*!important/i, 'min-width: 0 !important'],
+    [/min-height\s*:\s*0(?:px)?\s*!important/i, 'min-height: 0 !important'],
+    [/background-image\s*:\s*none\s*!important/i, 'background-image: none !important'],
+    [/color\s*:\s*transparent\s*!important/i, 'color: transparent !important'],
+    [/-webkit-appearance\s*:\s*none\s*!important/i, '-webkit-appearance: none !important'],
+    [/(^|[;\s])appearance\s*:\s*none\s*!important/i, 'appearance: none !important']
+  ];
+  for (const [pattern, label] of requiredButtonDeclarations) {
+    if (!pattern.test(buttonBody)) report(cssPath, `vendored Usuzumi scrollbar buttons must be fully hidden with ${label}`);
+  }
+
+  if (!/min-width\s*:\s*24px/i.test(thumbBody) || !/min-height\s*:\s*24px/i.test(thumbBody)) {
+    report(cssPath, 'vendored Usuzumi scrollbar thumbs need a 24px minimum length so short thumbs do not read as triangular arrow buttons');
   }
 }
 
 function checkVendorUsuzumiClassCoverage() {
   const cssPath = path.join(root, 'assets', 'vendor', 'usuzumi', 'ui', 'usuzumi.css');
   if (!existsSync(cssPath)) {
-    report(cssPath, 'Usuzumi vendor CSS is missing; run npm install');
+    report(cssPath, 'Usuzumi vendor CSS is missing; run npm run build to sync the sibling ../ui library or the installed package');
     return;
   }
-  const cssText = readText(cssPath);
+  const cssText = vendorCssText();
   const htmlFiles = walk(root).filter((filePath) => path.extname(filePath) === '.html');
-  const ignoredPrefixes = ['cm-', 'is-', 'language-', 'ProseMirror'];
   const missing = new Set();
 
   for (const filePath of htmlFiles) {
     for (const className of collectHtmlClasses(filePath)) {
-      if (ignoredPrefixes.some((prefix) => className.startsWith(prefix))) continue;
-      if (!className.startsWith('uzu-')) continue;
+      if (ignoredClassPrefixes.some((prefix) => className.startsWith(prefix))) continue;
       if (!cssContainsClass(cssText, className)) missing.add(className);
     }
   }
@@ -175,95 +308,72 @@ function checkVendorUsuzumiClassCoverage() {
   }
 }
 
-function checkGeneratedBundles() {
+function checkSiteRuntimeBoundary() {
+  for (const relative of retiredSiteRuntimeFiles) {
+    const filePath = path.join(root, ...relative.split('/'));
+    if (existsSync(filePath)) report(filePath, 'site-owned UI runtime should be removed; use the public Usuzumi UI runtime instead');
+  }
+
   const assetsDir = path.join(root, 'components', 'assets');
-  const expectedBundles = [
-    'code-editor.js',
-    'code-highlight.js',
-    'editor-loader.js',
-    'markdown-editor.js',
-    'rich-editor.js'
-  ];
-  for (const bundle of expectedBundles) {
-    const filePath = path.join(assetsDir, bundle);
-    if (!existsSync(filePath)) {
-      report(filePath, 'generated bundle is missing; run npm run build');
-    }
-  }
-
-  const retiredBundle = path.join(assetsDir, 'editor-engines.js');
-  if (existsSync(retiredBundle)) {
-    report(retiredBundle, 'retired combined editor bundle should be removed');
-  }
-
-  const highlightBundle = path.join(assetsDir, 'code-highlight.js');
-  if (existsSync(highlightBundle) && editorEngineLeakPattern.test(readText(highlightBundle))) {
-    report(highlightBundle, 'code highlighting bundle should not include editor engines or Shiki');
-  }
-
-  const loaderBundle = path.join(assetsDir, 'editor-loader.js');
-  if (existsSync(loaderBundle) && editorEngineLeakPattern.test(readText(loaderBundle))) {
-    report(loaderBundle, 'editor loader should stay small and not bundle editor engines');
-  }
-
-  const richBundle = path.join(assetsDir, 'rich-editor.js');
-  if (existsSync(richBundle) && /MarkdownIt|markdown-it|@codemirror|\bcodemirror\b/.test(readText(richBundle))) {
-    report(richBundle, 'rich editor bundle should only include Tiptap-related dependencies');
-  }
-
-  const markdownBundle = path.join(assetsDir, 'markdown-editor.js');
-  if (existsSync(markdownBundle) && /ProseMirror|@tiptap|\btiptap\b|@codemirror|\bcodemirror\b|\bEditorView\b/.test(readText(markdownBundle))) {
-    report(markdownBundle, 'markdown editor bundle should only include markdown-it');
-  }
-
-  const codeBundle = path.join(assetsDir, 'code-editor.js');
-  if (existsSync(codeBundle) && /@tiptap|MarkdownIt|markdown-it/i.test(readText(codeBundle))) {
-    report(codeBundle, 'code editor bundle should not include Tiptap or markdown-it');
+  const retiredBundles = ['editor-engines.js', 'rich-editor.js', 'code-editor.js', 'code-highlight.js'];
+  for (const bundle of retiredBundles) {
+    const retiredBundle = path.join(assetsDir, bundle);
+    if (existsSync(retiredBundle)) report(retiredBundle, 'retired editor bundle should be removed');
   }
 }
 
-function loadComponentDocsData() {
-  const assetsDir = path.join(root, 'components', 'assets');
-  const docs = {};
-  const context = { window: { UsuzumiComponentDocs: docs } };
-  vm.createContext(context);
-  const files = readdirSync(assetsDir).filter((entry) => /^components-(?:notes|interfaces)-.*\.js$/.test(entry)).sort();
-  for (const file of files) {
-    vm.runInContext(readText(path.join(assetsDir, file)), context, { filename: file });
-  }
-  return context.window.UsuzumiComponentDocs;
-}
-
-function hasList(value) {
-  return Array.isArray(value) && value.length > 0;
-}
-
-function hasAnyInterface(details = {}) {
-  return Object.values(details).some(hasList);
-}
-
-function checkComponentDocsCompleteness() {
+function checkComponentPage() {
   const filePath = path.join(root, 'components.html');
   const text = readText(filePath);
-  const docs = loadComponentDocsData();
-  const panels = [...text.matchAll(/<section class="uzu-reference-panel" id="component-([^"]+)"[\s\S]*?(?=<section class="uzu-reference-panel"|<footer class="uzu-footer")/g)];
+  const panels = [...text.matchAll(/<section class="[^"]*\buzu-panel\b[^"]*" id="component-([^"]+)"[\s\S]*?(?=<section class="[^"]*\buzu-panel\b[^"]*" id="component-|<footer class="uzu-footer")/g)];
   const panelSet = new Set(panels.map((match) => match[1]));
-  if (panelSet.size < 60) report(filePath, `component page exposes too few component panels: ${panelSet.size}`);
+  const navTargets = [...text.matchAll(/data-uzu-panel-target="#component-([^"]+)"/g)].map((match) => match[1]);
+  const navTargetSet = new Set(navTargets);
+  const componentDocHeadings = (text.match(/Component Docs/g) || []).length;
+  if (panelSet.size < 60) report(filePath, `component page exposes too few static component panels: ${panelSet.size}`);
+  if (navTargetSet.size !== panelSet.size) report(filePath, `component nav targets ${navTargetSet.size} do not match component panels ${panelSet.size}`);
+  if (componentDocHeadings !== panelSet.size) {
+    report(filePath, `component docs headings ${componentDocHeadings} do not match component panels ${panelSet.size}`);
+  }
+  if (!text.includes('data-uzu-panel-nav')) report(filePath, 'component page should use the public panel navigation runtime');
+  if (!text.includes('class="uzu-panel" id="component-colors"')) report(filePath, 'component page should expose an initial public .uzu-panel');
   for (const [panelText, id] of panels) {
-    const note = docs.componentNotes?.[id];
-    const details = docs.componentInterfaces?.[id];
-    if (!note) report(filePath, `component panel is missing notes data: ${id}`);
-    if (!details || !hasAnyInterface(details)) report(filePath, `component panel is missing interface data: ${id}`);
-    if (note && !hasList(note.classes)) report(filePath, `component notes are missing public classes: ${id}`);
-    if (!/(uzu-reference-example|uzu-callout|uzu-popover|uzu-type-list|uzu-reference-demo)/.test(panelText)) {
-      report(filePath, `component panel is missing a preview example: ${id}`);
+    for (const [pattern, message] of componentDocsQualityPatterns) {
+      if (pattern.test(panelText)) report(filePath, `component panel ${id}: ${message}`);
     }
+    if (!panelText.includes('uzu-section-head')) report(filePath, `component panel is missing a public section head: ${id}`);
+    if (!/<h2 class="uzu-section-title">/.test(panelText)) report(filePath, `component panel is missing a public section title: ${id}`);
+    if (!/\buzu-(?:card|callout|popover|alert|dialog|drawer|sheet|hover-card|tooltip|editor|table|data-grid|tree|skeleton|progress|process|step-nav|toast|tag|empty-state|error-state)\b/.test(panelText)) {
+      report(filePath, `component panel is missing a static public Usuzumi preview: ${id}`);
+    }
+    if (!panelText.includes('Component Docs')) report(filePath, `component panel is missing static docs content: ${id}`);
+    if (!/\buzu-callout\b/.test(panelText)) report(filePath, `component docs are missing public guidance callouts: ${id}`);
+    if (!/<table class="uzu-table">/.test(panelText)) report(filePath, `component docs are missing a public interface table: ${id}`);
+    if (!/\buzu-code-block\b/.test(panelText)) report(filePath, `component docs are missing a public code block: ${id}`);
+    if (!/data-uzu-code-copy/.test(panelText)) report(filePath, `component docs are missing the public code copy control: ${id}`);
   }
-  for (const key of Object.keys(docs.componentNotes || {})) {
-    if (!panelSet.has(key)) report(path.join(root, 'components', 'assets'), `component notes have no matching panel: ${key}`);
+}
+
+function checkPackageBoundary() {
+  const filePath = path.join(root, 'package.json');
+  const packageJson = JSON.parse(readText(filePath));
+  if (packageJson.dependencies?.usuzumi !== '1.2.0') {
+    report(filePath, 'site package should directly depend on usuzumi@1.2.0');
   }
-  for (const key of Object.keys(docs.componentInterfaces || {})) {
-    if (!panelSet.has(key)) report(path.join(root, 'components', 'assets'), `component interface has no matching panel: ${key}`);
+  if (packageJson.scripts?.bootstrap || packageJson.scripts?.postinstall) {
+    report(filePath, 'site package should not bootstrap a nested components install');
+  }
+}
+
+function checkVendorBoundary() {
+  const vendorDir = path.join(root, 'assets', 'vendor', 'usuzumi', 'ui');
+  if (!existsSync(vendorDir)) return;
+  for (const filePath of walk(vendorDir)) {
+    if (!textExtensions.has(path.extname(filePath))) continue;
+    const text = readText(filePath);
+    if (/component-docs|initComponentDocs|data-uzu-component|uzu-reference|uzu-token|uzu-type|uzu-download-actions|uzu-app-hero|uzu-product|uzu-screen|uzu-feature/i.test(text)) {
+      report(filePath, 'vendored Usuzumi assets should not contain component-page-only runtime or selectors');
+    }
   }
 }
 
@@ -279,9 +389,12 @@ for (const filePath of walk(root)) {
   }
   if (extension === '.css') checkCssReferences(filePath, text);
 }
-checkComponentDocsCompleteness();
-checkGeneratedBundles();
+checkComponentPage();
+checkPackageBoundary();
+checkSiteRuntimeBoundary();
+checkVendorBoundary();
 checkVendorUsuzumiClassCoverage();
+checkVendorScrollbarContract();
 
 if (issues.length) {
   console.error(`Validation failed with ${issues.length} issue(s):`);

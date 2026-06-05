@@ -1,53 +1,18 @@
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const require = createRequire(import.meta.url);
-const { buildSync } = require(path.join(root, 'components/node_modules/esbuild'));
+const localUsuzumiUi = path.resolve(root, '..', 'ui');
+const installedUsuzumiUi = path.join(root, 'node_modules/usuzumi/ui');
+const usuzumiUiSource = existsSync(path.join(localUsuzumiUi, 'usuzumi.css'))
+  ? localUsuzumiUi
+  : installedUsuzumiUi;
 const vendorAssets = [
   {
     name: 'Usuzumi UI library assets',
-    sourcePath: path.join(root, 'components/node_modules/usuzumi/ui'),
+    sourcePath: usuzumiUiSource,
     outputPath: path.join(root, 'assets/vendor/usuzumi/ui')
-  }
-];
-const bundles = [
-  {
-    name: 'component page editor loader',
-    banner: '/* Usuzumi component page editor loader. Edit components/assets/editor-loader.entry.js, then run npm run build. */',
-    entryPath: path.join(root, 'components/assets/editor-loader.entry.js'),
-    outputPath: path.join(root, 'components/assets/editor-loader.js'),
-    globalName: 'UsuzumiComponentEditorLoader'
-  },
-  {
-    name: 'component page rich text editor',
-    banner: '/* Usuzumi component page rich text editor. Edit components/assets/rich-editor.entry.js, then run npm run build. */',
-    entryPath: path.join(root, 'components/assets/rich-editor.entry.js'),
-    outputPath: path.join(root, 'components/assets/rich-editor.js'),
-    globalName: 'UsuzumiComponentRichEditor'
-  },
-  {
-    name: 'component page markdown editor',
-    banner: '/* Usuzumi component page markdown editor. Edit components/assets/markdown-editor.entry.js, then run npm run build. */',
-    entryPath: path.join(root, 'components/assets/markdown-editor.entry.js'),
-    outputPath: path.join(root, 'components/assets/markdown-editor.js'),
-    globalName: 'UsuzumiComponentMarkdownEditor'
-  },
-  {
-    name: 'component page code editor',
-    banner: '/* Usuzumi component page code editor. Edit components/assets/code-editor.entry.js, then run npm run build. */',
-    entryPath: path.join(root, 'components/assets/code-editor.entry.js'),
-    outputPath: path.join(root, 'components/assets/code-editor.js'),
-    globalName: 'UsuzumiComponentCodeEditor'
-  },
-  {
-    name: 'component page code highlighting',
-    banner: '/* Usuzumi component page code highlighting. Edit components/assets/code-highlight.entry.js, then run npm run build. */',
-    entryPath: path.join(root, 'components/assets/code-highlight.entry.js'),
-    outputPath: path.join(root, 'components/assets/code-highlight.js'),
-    globalName: 'UsuzumiComponentCodeHighlight'
   }
 ];
 
@@ -69,7 +34,9 @@ function listFiles(directory) {
 
 function assertVendorSource(asset) {
   if (!existsSync(asset.sourcePath)) {
-    throw new Error(`Missing ${asset.name}. Run npm install before building the site.`);
+    throw new Error(
+      `Missing ${asset.name}. Keep the sibling ../ui library available for local development, or run npm install to use the package dependency.`
+    );
   }
 }
 
@@ -94,39 +61,10 @@ function syncVendorAsset(asset) {
   cpSync(asset.sourcePath, asset.outputPath, { recursive: true });
 }
 
-function bundleAsset(bundle) {
-  if (!existsSync(bundle.entryPath)) {
-    throw new Error(`Missing ${toRelative(bundle.entryPath)}`);
-  }
-  const result = buildSync({
-    entryPoints: [bundle.entryPath],
-    bundle: true,
-    format: 'iife',
-    globalName: bundle.globalName,
-    minify: true,
-    legalComments: 'none',
-    target: 'es2020',
-    write: false
-  });
-  const output = result.outputFiles[0].text.trim();
-  return `${bundle.banner}\n${output}\n`;
-}
-
-const bundledAssets = bundles.map((bundle) => ({
-  ...bundle,
-  output: bundleAsset(bundle)
-}));
-
 if (process.argv.includes('--check')) {
   let hasDrift = false;
   for (const asset of vendorAssets) {
     if (vendorAssetHasDrift(asset)) {
-      console.error(`${toRelative(asset.outputPath)} out of date. Run npm run build.`);
-      hasDrift = true;
-    }
-  }
-  for (const asset of bundledAssets) {
-    if (readFileSync(asset.outputPath, 'utf8') !== asset.output) {
       console.error(`${toRelative(asset.outputPath)} out of date. Run npm run build.`);
       hasDrift = true;
     }
@@ -139,9 +77,4 @@ if (process.argv.includes('--check')) {
 for (const asset of vendorAssets) {
   syncVendorAsset(asset);
   console.log(`Synced ${toRelative(asset.outputPath)}`);
-}
-
-for (const asset of bundledAssets) {
-  writeFileSync(asset.outputPath, asset.output, 'utf8');
-  console.log(`Built ${toRelative(asset.outputPath)}`);
 }

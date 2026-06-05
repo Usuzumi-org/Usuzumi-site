@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
+import net from 'node:net';
 import { pathToFileURL } from 'node:url';
 import { fileURLToPath } from 'node:url';
 import { connectCdp, requestJson } from './cdp.mjs';
@@ -52,6 +53,21 @@ function findBrowserExecutable() {
   return matches.sort().at(-1) || '';
 }
 
+function getFreePort() {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      const port = typeof address === 'object' && address ? address.port : 0;
+      server.close(() => {
+        if (port) resolve(port);
+        else reject(new Error('Could not allocate a browser debugging port'));
+      });
+    });
+    server.on('error', reject);
+  });
+}
+
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
@@ -85,15 +101,38 @@ function assertNoOverflow(result) {
 }
 
 function assertVendorScrollbarStyle() {
-  assert(
-    vendorCss.includes('.uzu-scroll::-webkit-scrollbar') || (vendorCss.includes('.uzu-scroll') && vendorCss.includes('scrollbar-width')),
-    'vendor Usuzumi CSS does not expose the public .uzu-scroll scrollbar style'
-  );
+  const requiredSnippets = [
+    'html.uzu-root::-webkit-scrollbar-button',
+    'body.uzu-app::-webkit-scrollbar-button',
+    '.uzu-scroll::-webkit-scrollbar-button',
+    '.uzu-scroll-area',
+    '.uzu-table-wrap',
+    '.uzu-data-grid-wrap',
+    'display: none !important',
+    'width: 0 !important',
+    'height: 0 !important',
+    'min-width: 0 !important',
+    'min-height: 0 !important',
+    'background-image: none !important',
+    'color: transparent !important',
+    '-webkit-appearance: none !important',
+    'appearance: none !important',
+    'min-width: 24px',
+    'min-height: 24px',
+    '::-webkit-scrollbar-corner'
+  ];
+  for (const snippet of requiredSnippets) {
+    assert(vendorCss.includes(snippet), `vendor Usuzumi CSS is missing scrollbar contract snippet: ${snippet}`);
+  }
 }
 
 function assertPanelState(id, result) {
   assert(result.visiblePanel === id, `expected visible panel ${id}, got ${result.visiblePanel}`);
   assertNoOverflow(result);
+}
+
+function visibleComponentPanelExpression() {
+  return `document.querySelector('.uzu-panel[id^="component-"]:not([hidden])')?.id || ''`;
 }
 
 async function openPanel(cdp, id) {
@@ -107,10 +146,8 @@ async function openPanel(cdp, id) {
 
 async function panelState(cdp, id) {
   return evaluate(cdp, `state ${id}`, `(() => ({
-    visiblePanel: document.querySelector('.uzu-reference-panel:not([hidden])')?.id || '',
-    editorReady: document.querySelector('#${id} [data-uzu-rich-editor], #${id} [data-uzu-markdown-editor], #${id} [data-code-editor-shell]')?.dataset.editorReady || '',
-    codeMirrorMounted: Boolean(document.querySelector('#${id} .cm-editor')),
-    tiptapMounted: Boolean(document.querySelector('#${id} .ProseMirror')),
+    visiblePanel: ${visibleComponentPanelExpression()},
+    markdownValue: document.querySelector('#${id} [data-uzu-markdown-editor]')?.dataset.uzuMarkdownValue || '',
     markdownRendered: Boolean(document.querySelector('#${id} [data-uzu-markdown-preview] h1, #${id} [data-uzu-markdown-preview] ul')),
     horizontalOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
   }))()`);
@@ -127,6 +164,28 @@ async function waitForPanel(cdp, id, predicate) {
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+function waitForChildExit(child) {
+  return new Promise((resolve) => {
+    if (child.exitCode !== null || child.signalCode !== null) {
+      resolve();
+      return;
+    }
+    child.once('exit', resolve);
+  });
+}
+
+async function removeWithRetry(directory) {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    try {
+      rmSync(directory, { recursive: true, force: true, maxRetries: 4, retryDelay: 120 });
+      return;
+    } catch (error) {
+      if (attempt === 9) throw error;
+      await delay(180);
+    }
+  }
+}
+
 function browserDiagnostics(browser, launchArgs, childExit, stderrChunks) {
   const lines = [`Browser executable: ${browser}`, `Browser args: ${launchArgs.join(' ')}`];
   if (childExit) lines.push(`Browser exit: code=${childExit.code ?? 'null'} signal=${childExit.signal ?? 'null'}`);
@@ -135,24 +194,23 @@ function browserDiagnostics(browser, launchArgs, childExit, stderrChunks) {
   return lines.join('\n');
 }
 
-async function waitForBrowser(activePortFile, childExitRef, diagnostics) {
+async function waitForBrowser(activePortFile, debugPort, childExitRef, diagnostics) {
   const readPort = () => {
     if (!existsSync(activePortFile)) return 0;
     const [portText] = readFileSync(activePortFile, 'utf8').split(/\r?\n/);
     return Number.parseInt(portText, 10) || 0;
   };
+  const getPortCandidates = () => [...new Set([debugPort, readPort()].filter(Boolean))];
   for (let index = 0; index < 150; index += 1) {
     if (childExitRef.current) break;
-    const port = readPort();
-    if (!port) {
-      await delay(100);
-      continue;
+    for (const port of getPortCandidates()) {
+      try {
+        return await requestJson(port, '/json/version');
+      } catch (_) {
+        /* Keep polling while Chrome starts. */
+      }
     }
-    try {
-      return await requestJson(port, '/json/version');
-    } catch (_) {
-      await delay(100);
-    }
+    await delay(100);
   }
   throw new Error(`Browser did not expose a DevTools endpoint.\n${diagnostics()}`);
 }
@@ -168,8 +226,9 @@ async function runBrowserSmoke() {
   const profile = path.join(root, '.tmp', 'browser-smoke-profile');
   const activePortFile = path.join(profile, 'DevToolsActivePort');
   const targetUrl = pathToFileURL(path.join(root, 'components.html')).href;
+  const debugPort = Number.parseInt(process.env.USUZUMI_SITE_BROWSER_DEBUG_PORT || '', 10) || await getFreePort();
 
-  rmSync(profile, { recursive: true, force: true });
+  await removeWithRetry(profile);
   mkdirSync(profile, { recursive: true });
 
   const launchArgs = [
@@ -179,7 +238,8 @@ async function runBrowserSmoke() {
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage'
     ] : []),
-    '--remote-debugging-port=0',
+    `--remote-debugging-port=${debugPort}`,
+    '--remote-debugging-address=127.0.0.1',
     '--remote-allow-origins=*',
     `--user-data-dir=${profile}`,
     '--disable-gpu',
@@ -203,8 +263,9 @@ async function runBrowserSmoke() {
 
   const diagnostics = () => browserDiagnostics(browser, launchArgs, childExitRef.current, stderrChunks);
   try {
-    const browserInfo = await waitForBrowser(activePortFile, childExitRef, diagnostics);
+    const browserInfo = await waitForBrowser(activePortFile, debugPort, childExitRef, diagnostics);
     const port = Number.parseInt(new URL(browserInfo.webSocketDebuggerUrl).port, 10)
+      || debugPort
       || Number.parseInt(readFileSync(activePortFile, 'utf8').split(/\r?\n/)[0], 10);
     const target = await requestJson(port, `/json/new?${encodeURIComponent(targetUrl)}`, 'PUT');
     const cdp = await connectCdp(target.webSocketDebuggerUrl);
@@ -215,74 +276,73 @@ async function runBrowserSmoke() {
     const initial = await evaluate(cdp, 'initial page state', `(() => ({
       title: document.title,
       navCount: document.querySelectorAll('[data-uzu-panel-target^="#component-"]').length,
-      panelCount: document.querySelectorAll('.uzu-reference-panel').length,
-      visiblePanel: document.querySelector('.uzu-reference-panel:not([hidden])')?.id || '',
+      panelCount: document.querySelectorAll('.uzu-panel[id^="component-"]').length,
+      visiblePanel: ${visibleComponentPanelExpression()},
       horizontalOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      tokenCount: document.querySelectorAll('.uzu-code-token').length,
-      copyButtons: document.querySelectorAll('[data-uzu-code-copy]').length,
-      codeBlocks: document.querySelectorAll('.uzu-code-block').length,
-      tutorialCount: document.querySelectorAll('.uzu-reference-panel .uzu-reference-tutorial').length,
-      interfaceCount: document.querySelectorAll('.uzu-reference-panel .uzu-reference-interface').length,
-      demoCount: document.querySelectorAll('.uzu-reference-panel .uzu-reference-demo').length,
-      previewTabs: document.querySelectorAll('.uzu-reference-panel .uzu-tab[data-uzu-tab-value="preview"]').length,
-      codeTabs: document.querySelectorAll('.uzu-reference-panel .uzu-tab[data-uzu-tab-value="code"]').length,
-      interfaceTables: document.querySelectorAll('.uzu-reference-panel .uzu-reference-table').length,
-      interfaceRows: document.querySelectorAll('.uzu-reference-panel .uzu-reference-table tbody tr').length,
-      emptyPurposeCells: [...document.querySelectorAll('.uzu-reference-table tbody td:nth-child(2)')]
-        .filter((cell) => cell.textContent.trim().length < 12).length,
-      emptyExampleCells: [...document.querySelectorAll('.uzu-reference-table tbody td:nth-child(3)')]
-        .filter((cell) => cell.textContent.trim().length < 4).length,
-      malformedCodeBlocks: [...document.querySelectorAll('.uzu-code-block')].filter((block) => (
-        !block.querySelector('.uzu-code-block-body')
-        || !block.querySelector('[data-uzu-code-copy]')
-        || block.querySelector('code')?.textContent.trim().length < 3
-      )).length,
-      oversizedCopyButtons: [...document.querySelectorAll('.uzu-code-block-copy')].filter((button) => {
-        const style = getComputedStyle(button);
-        const rect = button.getBoundingClientRect();
-        return style.position !== 'absolute' || rect.width > 40 || rect.height > 40;
-      }).length,
-      sideBarUsesPublicScroll: Boolean(document.querySelector('.uzu-reference-sidebar.uzu-scroll')),
-      highlightApi: Boolean(window.UsuzumiComponentCodeHighlight?.highlightAll),
-      loaderApi: Boolean(window.UsuzumiComponentEditorLoader?.loadVisibleEditors),
-      editorEnginesOnBoot: Boolean(window.UsuzumiComponentRichEditor || window.UsuzumiComponentMarkdownEditor || window.UsuzumiComponentCodeEditor)
+      highlightTokenCount: window.Usuzumi?.highlightCode?.("const label = 'Usuzumi';", 'javascript')?.fragment?.querySelectorAll?.('.uzu-code-token')?.length || 0,
+      sideBarUsesPublicScroll: Boolean(document.querySelector('.uzu-sidebar.uzu-scroll')),
+      documentedPanelCount: Array.from(document.querySelectorAll('.uzu-panel[id^="component-"]')).filter((panel) =>
+        panel.textContent.includes('Component Docs')
+        && panel.querySelector('.uzu-callout')
+        && panel.querySelector('.uzu-table')
+        && panel.querySelector('.uzu-code-block')
+        && panel.querySelector('[data-uzu-code-copy]')
+      ).length,
+      highlightApi: Boolean(window.Usuzumi?.highlightCodeBlocks),
+      componentDocsApi: Boolean(window.Usuzumi?.initComponentDocs),
+      retiredSiteRuntimeApis: Boolean(window.UsuzumiComponentEditorLoader || window.UsuzumiComponentMarkdownEditor),
+      scrollbarButtonProbe: [document.documentElement, document.body, document.querySelector('.uzu-sidebar.uzu-scroll-area')].filter(Boolean).map((element) => {
+        const button = getComputedStyle(element, '::-webkit-scrollbar-button');
+        const thumb = getComputedStyle(element, '::-webkit-scrollbar-thumb');
+        return {
+          selector: element === document.documentElement ? 'html' : element === document.body ? 'body' : '.uzu-sidebar.uzu-scroll-area',
+          standardScrollbarWidth: getComputedStyle(element).scrollbarWidth || '',
+          buttonDisplay: button.display,
+          buttonWidth: button.width,
+          buttonHeight: button.height,
+          buttonBackgroundImage: button.backgroundImage,
+          buttonColor: button.color,
+          thumbMinWidth: thumb.minWidth,
+          thumbMinHeight: thumb.minHeight
+        };
+      })
     }))()`);
     assert(initial.title === 'Usuzumi Components', `unexpected component page title: ${initial.title}`);
     assert(initial.panelCount >= 60, `too few component panels: ${initial.panelCount}`);
     assert(initial.navCount === initial.panelCount, `nav count ${initial.navCount} does not match panel count ${initial.panelCount}`);
     assert(initial.visiblePanel === 'component-colors', `unexpected initial panel: ${initial.visiblePanel}`);
-    assert(initial.tokenCount > 0, 'syntax highlighting did not generate code tokens');
-    assert(initial.copyButtons === initial.codeBlocks, `copy buttons ${initial.copyButtons} do not match code blocks ${initial.codeBlocks}`);
-    assert(initial.tutorialCount === initial.panelCount, `tutorial count ${initial.tutorialCount} does not match panel count ${initial.panelCount}`);
-    assert(initial.interfaceCount === initial.panelCount, `interface count ${initial.interfaceCount} does not match panel count ${initial.panelCount}`);
-    assert(initial.demoCount === initial.panelCount, `demo count ${initial.demoCount} does not match panel count ${initial.panelCount}`);
-    assert(initial.previewTabs === initial.panelCount && initial.codeTabs === initial.panelCount, `preview/code tabs are incomplete: ${initial.previewTabs}/${initial.codeTabs}`);
-    assert(initial.interfaceTables >= initial.panelCount, `too few interface tables: ${initial.interfaceTables}`);
-    assert(initial.interfaceRows >= initial.panelCount * 2, `too few interface rows: ${initial.interfaceRows}`);
-    assert(initial.emptyPurposeCells === 0, `${initial.emptyPurposeCells} configurable rows have weak purpose copy`);
-    assert(initial.emptyExampleCells === 0, `${initial.emptyExampleCells} configurable rows are missing example values`);
-    assert(initial.malformedCodeBlocks === 0, `${initial.malformedCodeBlocks} code blocks are missing body, copy button, or content`);
-    assert(initial.oversizedCopyButtons === 0, `${initial.oversizedCopyButtons} copy buttons are not small absolute icon buttons`);
-    assert(initial.sideBarUsesPublicScroll, 'reference sidebar does not use the public .uzu-scroll class');
+    assert(initial.highlightTokenCount > 0, 'syntax highlighting API did not generate code tokens');
+    assert(initial.sideBarUsesPublicScroll, 'component sidebar does not use the public .uzu-scroll class');
+    assert(initial.documentedPanelCount === initial.panelCount, `documented panel count ${initial.documentedPanelCount} does not match panel count ${initial.panelCount}`);
     assert(initial.highlightApi, 'code highlighting API is not exposed');
-    assert(initial.loaderApi, 'editor loader API is not exposed');
-    assert(!initial.editorEnginesOnBoot, 'editor engine bundles loaded before an editor panel was visible');
+    assert(!initial.componentDocsApi, 'component docs API should not be exposed');
+    assert(!initial.retiredSiteRuntimeApis, 'retired site-owned UI runtime APIs are still exposed');
+    assert(initial.scrollbarButtonProbe.length === 3, `component page scrollbar probe did not inspect all key scroll surfaces: ${JSON.stringify(initial.scrollbarButtonProbe)}`);
+    for (const probe of initial.scrollbarButtonProbe) {
+      assert(
+        probe.standardScrollbarWidth !== 'thin',
+        `component page Chromium scroll surface should use WebKit scrollbar styling instead of standard thin scrollbars: ${JSON.stringify(probe)}`
+      );
+      assert(
+        probe.buttonDisplay === 'none'
+        && probe.buttonWidth === '0px'
+        && probe.buttonHeight === '0px'
+        && (probe.buttonBackgroundImage === 'none' || probe.buttonBackgroundImage === '')
+        && (probe.buttonColor === 'rgba(0, 0, 0, 0)' || probe.buttonColor === 'transparent'),
+        `component page WebKit scrollbar arrow button is not fully hidden: ${JSON.stringify(probe)}`
+      );
+      assert(
+        Number.parseFloat(probe.thumbMinWidth) >= 24
+        && Number.parseFloat(probe.thumbMinHeight) >= 24,
+        `component page scrollbar thumb can collapse into a triangular arrow-like shape: ${JSON.stringify(probe)}`
+      );
+    }
     assertNoOverflow(initial);
 
-    await openPanel(cdp, 'component-rich-editor');
-    const rich = await waitForPanel(cdp, 'component-rich-editor', (state) => state.editorReady === 'tiptap');
-    assertPanelState('component-rich-editor', rich);
-    assert(rich.editorReady === 'tiptap' && rich.tiptapMounted, 'Tiptap editor did not mount');
-
     await openPanel(cdp, 'component-markdown-editor');
-    const markdown = await waitForPanel(cdp, 'component-markdown-editor', (state) => state.editorReady === 'markdown-it');
+    const markdown = await waitForPanel(cdp, 'component-markdown-editor', (state) => state.markdownRendered);
     assertPanelState('component-markdown-editor', markdown);
-    assert(markdown.editorReady === 'markdown-it' && markdown.markdownRendered, 'markdown-it preview did not render');
-
-    await openPanel(cdp, 'component-code-editor');
-    const code = await waitForPanel(cdp, 'component-code-editor', (state) => state.editorReady === 'codemirror');
-    assertPanelState('component-code-editor', code);
-    assert(code.editorReady === 'codemirror' && code.codeMirrorMounted, 'CodeMirror editor did not mount');
+    assert(markdown.markdownValue.includes('# Release note') && markdown.markdownRendered, 'built-in markdown preview did not render');
 
     await openPanel(cdp, 'component-data-grid');
     await evaluate(cdp, 'data grid interaction', `(() => {
@@ -341,12 +401,46 @@ async function runBrowserSmoke() {
     })()`);
     assert(resizableResult.after > resizableResult.before, `resizable panel did not resize: ${JSON.stringify(resizableResult)}`);
 
+    await cdp.send('Emulation.setDeviceMetricsOverride', {
+      width: 390,
+      height: 844,
+      deviceScaleFactor: 1,
+      mobile: true
+    });
+    await cdp.send('Emulation.setVisibleSize', { width: 390, height: 844 });
+    await delay(350);
+    await openPanel(cdp, 'component-skeleton');
+    await delay(350);
+    const mobileLayout = await evaluate(cdp, 'mobile component page layout', `(() => {
+      const panel = document.querySelector('#component-skeleton');
+      const sidebar = document.querySelector('.uzu-sidebar.uzu-scroll-area');
+      const panelRect = panel?.getBoundingClientRect();
+      const sidebarRect = sidebar?.getBoundingClientRect();
+      const sidebarStyle = sidebar ? getComputedStyle(sidebar) : null;
+      return {
+        visiblePanel: ${visibleComponentPanelExpression()},
+        horizontalOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        viewportHeight: window.innerHeight,
+        panelTop: panelRect?.top ?? 9999,
+        panelWidth: panelRect?.width ?? 0,
+        sidebarHeight: sidebarRect?.height ?? 0,
+        sidebarOverflowY: sidebarStyle?.overflowY || '',
+        sidebarScrollHeight: sidebar?.scrollHeight || 0,
+        sidebarClientHeight: sidebar?.clientHeight || 0
+      };
+    })()`);
+    assertPanelState('component-skeleton', mobileLayout);
+    assert(mobileLayout.panelTop < mobileLayout.viewportHeight * 0.72, `mobile component panel is pushed below the first viewport: ${JSON.stringify(mobileLayout)}`);
+    assert(mobileLayout.sidebarHeight <= 280, `mobile component sidebar is too tall: ${JSON.stringify(mobileLayout)}`);
+    assert(mobileLayout.sidebarOverflowY === 'auto', `mobile component sidebar should be locally scrollable: ${JSON.stringify(mobileLayout)}`);
+    assert(mobileLayout.sidebarScrollHeight > mobileLayout.sidebarClientHeight, `mobile component sidebar should contain local overflow: ${JSON.stringify(mobileLayout)}`);
+
     cdp.close();
     console.log('Site browser smoke passed.');
   } finally {
     child.kill();
-    await delay(250);
-    rmSync(profile, { recursive: true, force: true });
+    await Promise.race([waitForChildExit(child), delay(1500)]);
+    await removeWithRetry(profile);
   }
 }
 
