@@ -339,6 +339,74 @@ async function runBrowserSmoke() {
     }
     assertNoOverflow(initial);
 
+    const rawBacktickCopy = await evaluate(cdp, 'raw backticks in section descriptions', `(() =>
+      Array.from(document.querySelectorAll('.uzu-section-head .uzu-text'))
+        .filter((element) => element.textContent.includes('\`'))
+        .map((element) => element.textContent.trim())
+    )()`);
+    assert(rawBacktickCopy.length === 0, `component page has raw markdown backticks in visible descriptions: ${JSON.stringify(rawBacktickCopy)}`);
+
+    await openPanel(cdp, 'component-typography');
+    const typographyPanel = await panelState(cdp, 'component-typography');
+    assertPanelState('component-typography', typographyPanel);
+    const typographySpecimens = await evaluate(cdp, 'typography specimen containment', `(() => {
+      const makeTextRect = (element) => {
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        const rect = range.getBoundingClientRect();
+        range.detach?.();
+        return rect;
+      };
+      return Array.from(document.querySelectorAll('#component-typography .uzu-scroll-area > :is(.uzu-signature, .uzu-hero-title, .uzu-page-title, .uzu-section-title)'))
+        .map((element) => {
+          const preview = element.closest('.uzu-scroll-area');
+          const card = element.closest('.uzu-card');
+          const previewStyle = getComputedStyle(preview);
+          const cardRect = card.getBoundingClientRect();
+          const previewRect = preview.getBoundingClientRect();
+          const textRect = makeTextRect(element);
+          return {
+            label: element.className,
+            textLeft: textRect.left,
+            textRight: textRect.right,
+            previewLeft: previewRect.left,
+            previewRight: previewRect.right,
+            previewTop: previewRect.top,
+            previewBottom: previewRect.bottom,
+            previewOverflowY: previewStyle.overflowY,
+            previewMaxHeight: previewStyle.maxHeight,
+            previewClientHeight: preview.clientHeight,
+            previewScrollHeight: preview.scrollHeight,
+            cardLeft: cardRect.left,
+            cardRight: cardRect.right,
+            cardTop: cardRect.top,
+            cardBottom: cardRect.bottom
+          };
+        });
+    })()`);
+    assert(typographySpecimens.length >= 4, `typography specimen containment did not inspect all display roles: ${JSON.stringify(typographySpecimens)}`);
+    for (const specimen of typographySpecimens) {
+      assert(
+        specimen.previewLeft >= specimen.cardLeft - 1
+        && specimen.previewRight <= specimen.cardRight + 1
+        && specimen.previewTop >= specimen.cardTop - 1
+        && specimen.previewBottom <= specimen.cardBottom + 1,
+        `typography specimen preview escapes its card: ${JSON.stringify(specimen)}`
+      );
+      assert(
+        specimen.textLeft >= specimen.previewLeft - 1 && specimen.textRight <= specimen.previewRight + 1,
+        `typography specimen text escapes its public preview surface horizontally: ${JSON.stringify(specimen)}`
+      );
+      assert(
+        specimen.previewOverflowY === 'auto' && Number.parseFloat(specimen.previewMaxHeight) > 0,
+        `typography specimen preview should use a bounded public scroll area: ${JSON.stringify(specimen)}`
+      );
+    }
+    assert(
+      typographySpecimens.some((specimen) => specimen.label.includes('uzu-signature') && specimen.previewScrollHeight > specimen.previewClientHeight),
+      `signature specimen should be visibly bounded by its public scroll area: ${JSON.stringify(typographySpecimens)}`
+    );
+
     await openPanel(cdp, 'component-markdown-editor');
     const markdown = await waitForPanel(cdp, 'component-markdown-editor', (state) => state.markdownRendered);
     assertPanelState('component-markdown-editor', markdown);

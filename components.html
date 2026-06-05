@@ -134,7 +134,7 @@
           <div class="uzu-section-head">
             <p class="uzu-section-label">Foundation</p>
             <h2 class="uzu-section-title"><span data-lang="zh">颜色令牌</span><span data-lang="en">Color Tokens</span></h2>
-            <p class="uzu-text uzu-break-anywhere"><span data-lang="zh">颜色通过 CSS 变量暴露。项目可以在根节点、`.uzu-scope` 或具体组件上覆盖变量。</span><span data-lang="en">Colors are exposed as CSS variables. Override them on the root, `.uzu-scope`, or a single component.</span></p>
+            <p class="uzu-text uzu-break-anywhere"><span data-lang="zh">颜色通过 CSS 变量暴露。项目可以在根节点、<code class="uzu-code">.uzu-scope</code> 或具体组件上覆盖变量。</span><span data-lang="en">Colors are exposed as CSS variables. Override them on the root, <code class="uzu-code">.uzu-scope</code>, or a single component.</span></p>
           </div>
           <div class="uzu-card uzu-stack uzu-gap-4">
             <div class="uzu-grid uzu-grid-3">
@@ -274,33 +274,41 @@
           <div class="uzu-stack uzu-gap-5">
             <div class="uzu-stack uzu-gap-3">
               <p class="uzu-section-label"><span data-lang="zh">展示文字</span><span data-lang="en">Display</span></p>
-              <article class="uzu-card uzu-grid uzu-grid-2">
+              <article class="uzu-card uzu-stack uzu-gap-3">
                 <div class="uzu-title-pair">
                   <h3>Signature</h3>
                   <p><code class="uzu-code">.uzu-signature</code></p>
                 </div>
-                <p class="uzu-signature">Usuzumi</p>
+                <div class="uzu-scroll-area" style="--uzu-scroll-area-max-height: 170px">
+                  <p class="uzu-signature">Usuzumi</p>
+                </div>
               </article>
-              <article class="uzu-card uzu-grid uzu-grid-2">
+              <article class="uzu-card uzu-stack uzu-gap-3">
                 <div class="uzu-title-pair">
                   <h3>Hero title</h3>
                   <p><code class="uzu-code">.uzu-hero-title</code></p>
                 </div>
-                <p class="uzu-hero-title">Usuzumi</p>
+                <div class="uzu-scroll-area" style="--uzu-scroll-area-max-height: 160px">
+                  <p class="uzu-hero-title">Usuzumi</p>
+                </div>
               </article>
-              <article class="uzu-card uzu-grid uzu-grid-2">
+              <article class="uzu-card uzu-stack uzu-gap-3">
                 <div class="uzu-title-pair">
                   <h3>Page title</h3>
                   <p><code class="uzu-code">.uzu-page-title</code></p>
                 </div>
-                <p class="uzu-page-title"><span data-lang="zh">组件页</span><span data-lang="en">Components</span></p>
+                <div class="uzu-scroll-area" style="--uzu-scroll-area-max-height: 110px">
+                  <p class="uzu-page-title"><span data-lang="zh">组件页</span><span data-lang="en">Components</span></p>
+                </div>
               </article>
-              <article class="uzu-card uzu-grid uzu-grid-2">
+              <article class="uzu-card uzu-stack uzu-gap-3">
                 <div class="uzu-title-pair">
                   <h3>Section title</h3>
                   <p><code class="uzu-code">.uzu-section-title</code></p>
                 </div>
-                <p class="uzu-section-title"><span data-lang="zh">组件目录</span><span data-lang="en">Catalog</span></p>
+                <div class="uzu-scroll-area" style="--uzu-scroll-area-max-height: 100px">
+                  <p class="uzu-section-title"><span data-lang="zh">组件目录</span><span data-lang="en">Catalog</span></p>
+                </div>
               </article>
             </div>
             <div class="uzu-stack uzu-gap-3">
@@ -591,19 +599,21 @@
           <div class="uzu-section-head">
             <p class="uzu-section-label">Layout</p>
             <h2 class="uzu-section-title"><span data-lang="zh">居中区块</span><span data-lang="en">Centered Section</span></h2>
-            <p class="uzu-text uzu-break-anywhere"><span data-lang="zh">`.uzu-section-centered` 用在内容很短的区块，比如介绍、下载入口或空状态。</span><span data-lang="en">Use `.uzu-section-centered` for short sections such as intros, download groups, or empty states.</span></p>
+            <p class="uzu-text uzu-break-anywhere"><span data-lang="zh"><code class="uzu-code">.uzu-section-centered</code> 用在内容很短的区块，比如介绍、下载入口或空状态。</span><span data-lang="en">Use <code class="uzu-code">.uzu-section-centered</code> for short sections such as intros, download groups, or empty states.</span></p>
           </div>
-          <section class="uzu-section uzu-section-centered uzu-card uzu-stack uzu-gap-4">
-            <div class="uzu-section-head">
-              <p class="uzu-section-label">Usuzumi</p>
-              <h3 class="uzu-section-title"><span data-lang="zh">直接引用</span><span data-lang="en">Direct Include</span></h3>
-              <p class="uzu-body-large"><span data-lang="zh">页面里引入 CSS；需要交互控件时再引入 JS。</span><span data-lang="en">Load the CSS first; add the JS when the page needs interactive controls.</span></p>
-            </div>
-            <div class="uzu-flex uzu-wrap uzu-gap-2">
-              <button class="uzu-button uzu-button-primary" type="button"><span data-lang="zh">复制链接</span><span data-lang="en">Copy link</span></button>
-              <button class="uzu-button" type="button"><span data-lang="zh">查看示例</span><span data-lang="en">View example</span></button>
-            </div>
-          </section>
+          <div class="uzu-card">
+            <section class="uzu-section uzu-section-centered uzu-no-border">
+              <div class="uzu-section-head">
+                <p class="uzu-section-label">Usuzumi</p>
+                <h3 class="uzu-section-title"><span data-lang="zh">直接引用</span><span data-lang="en">Direct Include</span></h3>
+                <p class="uzu-body-large"><span data-lang="zh">页面里引入 CSS；需要交互控件时再引入 JS。</span><span data-lang="en">Load the CSS first; add the JS when the page needs interactive controls.</span></p>
+              </div>
+              <div class="uzu-flex uzu-wrap uzu-gap-2">
+                <button class="uzu-button uzu-button-primary" type="button"><span data-lang="zh">复制链接</span><span data-lang="en">Copy link</span></button>
+                <button class="uzu-button" type="button"><span data-lang="zh">查看示例</span><span data-lang="en">View example</span></button>
+              </div>
+            </section>
+          </div>
           <div class="uzu-card uzu-stack uzu-gap-4">
             <div class="uzu-title-pair">
               <h3><span data-lang="zh">组件文档</span><span data-lang="en">Component Docs</span></h3>
@@ -1507,7 +1517,7 @@
           <div class="uzu-section-head">
             <p class="uzu-section-label">Display</p>
             <h2 class="uzu-section-title"><span data-lang="zh">表格</span><span data-lang="en">Table</span></h2>
-            <p class="uzu-text uzu-break-anywhere"><span data-lang="zh">表格用于结构化数据。外层 `.uzu-table-wrap` 处理小屏横向滚动。</span><span data-lang="en">Tables present structured data. `.uzu-table-wrap` handles horizontal overflow on small screens.</span></p>
+            <p class="uzu-text uzu-break-anywhere"><span data-lang="zh">表格用于结构化数据。外层 <code class="uzu-code">.uzu-table-wrap</code> 处理小屏横向滚动。</span><span data-lang="en">Tables present structured data. <code class="uzu-code">.uzu-table-wrap</code> handles horizontal overflow on small screens.</span></p>
           </div>
           <div class="uzu-card uzu-stack uzu-gap-4">
             <div class="uzu-table-wrap">
@@ -2781,7 +2791,7 @@
           <div class="uzu-section-head">
             <p class="uzu-section-label">Actions</p>
             <h2 class="uzu-section-title"><span data-lang="zh">分页</span><span data-lang="en">Pagination</span></h2>
-            <p class="uzu-text uzu-break-anywhere"><span data-lang="zh">给分页列表加 `data-uzu-pagination` 后，脚本会更新当前页、前后按钮和对应内容面板。</span><span data-lang="en">Add `data-uzu-pagination` so the script updates the current page, prev/next buttons, and matching panels.</span></p>
+            <p class="uzu-text uzu-break-anywhere"><span data-lang="zh">给分页列表加 <code class="uzu-code">data-uzu-pagination</code> 后，脚本会更新当前页、前后按钮和对应内容面板。</span><span data-lang="en">Add <code class="uzu-code">data-uzu-pagination</code> so the script updates the current page, prev/next buttons, and matching panels.</span></p>
           </div>
           <div class="uzu-card uzu-stack uzu-gap-4">
             <div id="pagination-demo-pages">
@@ -3528,7 +3538,7 @@
           <div class="uzu-section-head">
             <p class="uzu-section-label">Controls</p>
             <h2 class="uzu-section-title"><span data-lang="zh">标签页</span><span data-lang="en">Tabs</span></h2>
-            <p class="uzu-text uzu-break-anywhere"><span data-lang="zh">标签页用于同级内容切换。加上 `data-uzu-tabs` 后，脚本会处理 ARIA、键盘导航和下划线动画。</span><span data-lang="en">Tabs switch peer content. Add `data-uzu-tabs` for ARIA, keyboard navigation, and the animated underline.</span></p>
+            <p class="uzu-text uzu-break-anywhere"><span data-lang="zh">标签页用于同级内容切换。加上 <code class="uzu-code">data-uzu-tabs</code> 后，脚本会处理 ARIA、键盘导航和下划线动画。</span><span data-lang="en">Tabs switch peer content. Add <code class="uzu-code">data-uzu-tabs</code> for ARIA, keyboard navigation, and the animated underline.</span></p>
           </div>
           <div class="uzu-card uzu-stack uzu-gap-4">
             <div class="uzu-tabs" data-uzu-tabs>
@@ -4081,7 +4091,7 @@
           <div class="uzu-section-head">
             <p class="uzu-section-label">Controls</p>
             <h2 class="uzu-section-title"><span data-lang="zh">开关</span><span data-lang="en">Switch</span></h2>
-            <p class="uzu-text uzu-break-anywhere"><span data-lang="zh">开关用于点下后立即生效的二元设置。脚本会同步 `.is-on` 和 `aria-checked`。</span><span data-lang="en">Switches are for binary settings that apply immediately. The script syncs `.is-on` and `aria-checked`.</span></p>
+            <p class="uzu-text uzu-break-anywhere"><span data-lang="zh">开关用于点下后立即生效的二元设置。脚本会同步 <code class="uzu-code">.is-on</code> 和 <code class="uzu-code">aria-checked</code>。</span><span data-lang="en">Switches are for binary settings that apply immediately. The script syncs <code class="uzu-code">.is-on</code> and <code class="uzu-code">aria-checked</code>.</span></p>
           </div>
           <div class="uzu-card uzu-stack uzu-gap-4">
             <div class="uzu-check-row">
@@ -6661,7 +6671,7 @@
           <div class="uzu-section-head">
             <p class="uzu-section-label">Overlay</p>
             <h2 class="uzu-section-title"><span data-lang="zh">折叠面板</span><span data-lang="en">Disclosure</span></h2>
-            <p class="uzu-text uzu-break-anywhere"><span data-lang="zh">折叠面板用于默认收起的补充内容。脚本负责高度动画、ARIA 和 `hidden` 状态。</span><span data-lang="en">Disclosures hide supporting content by default. The script handles height animation, ARIA, and `hidden` state.</span></p>
+            <p class="uzu-text uzu-break-anywhere"><span data-lang="zh">折叠面板用于默认收起的补充内容。脚本负责高度动画、ARIA 和 <code class="uzu-code">hidden</code> 状态。</span><span data-lang="en">Disclosures hide supporting content by default. The script handles height animation, ARIA, and <code class="uzu-code">hidden</code> state.</span></p>
           </div>
           <div class="uzu-card uzu-stack uzu-gap-4">
             <article class="uzu-disclosure" data-uzu-disclosure>
