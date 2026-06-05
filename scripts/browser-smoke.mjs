@@ -119,6 +119,8 @@ function assertVendorScrollbarStyle() {
     'appearance: none !important',
     'min-width: 24px',
     'min-height: 24px',
+    '--uzu-scrollbar-thumb-bg: transparent',
+    '--uzu-scrollbar-thumb-bg: var(--uzu-border)',
     '::-webkit-scrollbar-corner'
   ];
   for (const snippet of requiredSnippets) {
