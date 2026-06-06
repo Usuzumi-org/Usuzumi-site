@@ -49,6 +49,13 @@ const componentDocsQualityPatterns = [
   [/aria-valuenow=&quot;true/i, 'docs contain an invalid aria-valuenow example'],
   [/aria-orientation=&quot;true/i, 'docs contain an invalid aria-orientation example']
 ];
+const retiredEditorCopyPattern = new RegExp([
+  'T' + 'iptap mount',
+  'Code' + 'Mirror 6 mount',
+  '\\bdata-uzu-' + 'r' + 'ich-editor\\b',
+  'R' + 'ich text',
+  '富' + '文本'
+].join('|'), 'i');
 const ignoredClassPrefixes = ['is-', 'language-'];
 const scrollbarSurfaces = [
   'html.uzu-root',
@@ -236,8 +243,8 @@ function checkGuardrails(filePath, text) {
   if (relative === 'components.html') {
     if (retiredComponentPagePattern.test(text)) report(filePath, 'component page should be static consumer markup and must not load component-docs hooks, data files, or page-only classes');
     if (retiredSiteRuntimePattern.test(text)) report(filePath, 'component page should not load site-owned UI runtime scripts');
-    if (/Tiptap mount|CodeMirror 6 mount/.test(text)) {
-      report(filePath, 'component page should not include retired rich text or code editor mount copy');
+    if (retiredEditorCopyPattern.test(text)) {
+      report(filePath, 'component page should not include retired external editor copy');
     }
     for (const [pattern, message] of componentDocsQualityPatterns) {
       if (pattern.test(text)) report(filePath, message);
@@ -348,6 +355,20 @@ function checkComponentPage() {
   if (componentDocHeadings !== panelSet.size) {
     report(filePath, `component docs headings ${componentDocHeadings} do not match component panels ${panelSet.size}`);
   }
+  const demoTabs = (text.match(/aria-label="Component demo view"/g) || []).length;
+  const demoPreviewTargets = (text.match(/data-uzu-tab-target="#demo-[^"]+-preview"/g) || []).length;
+  const demoCodeTargets = (text.match(/data-uzu-tab-target="#demo-[^"]+-code"/g) || []).length;
+  const demoPreviewPanels = (text.match(/id="demo-[^"]+-preview"/g) || []).length;
+  const demoCodePanels = (text.match(/id="demo-[^"]+-code"/g) || []).length;
+  for (const [label, count] of [
+    ['demo tab groups', demoTabs],
+    ['demo preview tab targets', demoPreviewTargets],
+    ['demo code tab targets', demoCodeTargets],
+    ['demo preview panels', demoPreviewPanels],
+    ['demo code panels', demoCodePanels]
+  ]) {
+    if (count !== panelSet.size) report(filePath, `component ${label} ${count} do not match component panels ${panelSet.size}`);
+  }
   if (!text.includes('data-uzu-panel-nav')) report(filePath, 'component page should use the public panel navigation runtime');
   if (!text.includes('class="uzu-panel" id="component-colors"')) report(filePath, 'component page should expose an initial public .uzu-panel');
   for (const [panelText, id] of panels) {
@@ -360,6 +381,11 @@ function checkComponentPage() {
       report(filePath, `component panel is missing a static public Usuzumi preview: ${id}`);
     }
     if (!panelText.includes('Component Docs')) report(filePath, `component panel is missing static docs content: ${id}`);
+    if (!/aria-label="Component demo view"/.test(panelText)) report(filePath, `component panel is missing public preview/code tabs: ${id}`);
+    if (!/data-uzu-tab-target="#demo-[^"]+-preview"/.test(panelText)) report(filePath, `component panel is missing public preview tab target: ${id}`);
+    if (!/data-uzu-tab-target="#demo-[^"]+-code"/.test(panelText)) report(filePath, `component panel is missing public code tab target: ${id}`);
+    if (!/id="demo-[^"]+-preview"/.test(panelText)) report(filePath, `component panel is missing public preview panel: ${id}`);
+    if (!/id="demo-[^"]+-code"/.test(panelText)) report(filePath, `component panel is missing public code panel: ${id}`);
     if (!/\buzu-callout\b/.test(panelText)) report(filePath, `component docs are missing public guidance callouts: ${id}`);
     if (!/<table class="uzu-table">/.test(panelText)) report(filePath, `component docs are missing a public interface table: ${id}`);
     if (!/\buzu-code-block\b/.test(panelText)) report(filePath, `component docs are missing a public code block: ${id}`);

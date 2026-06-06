@@ -290,6 +290,13 @@ async function runBrowserSmoke() {
         && panel.querySelector('.uzu-code-block')
         && panel.querySelector('[data-uzu-code-copy]')
       ).length,
+      demoTabPanelCount: Array.from(document.querySelectorAll('.uzu-panel[id^="component-"]')).filter((panel) =>
+        panel.querySelector('[aria-label="Component demo view"][data-uzu-tabs]')
+        && panel.querySelector('[data-uzu-tab-target^="#demo-"][data-uzu-tab-target$="-preview"]')
+        && panel.querySelector('[data-uzu-tab-target^="#demo-"][data-uzu-tab-target$="-code"]')
+        && panel.querySelector('[id^="demo-"][id$="-preview"]')
+        && panel.querySelector('[id^="demo-"][id$="-code"] .uzu-code-block')
+      ).length,
       highlightApi: Boolean(window.Usuzumi?.highlightCodeBlocks),
       componentDocsApi: Boolean(window.Usuzumi?.initComponentDocs),
       retiredSiteRuntimeApis: Boolean(window.UsuzumiComponentEditorLoader || window.UsuzumiComponentMarkdownEditor),
@@ -316,6 +323,7 @@ async function runBrowserSmoke() {
     assert(initial.highlightTokenCount > 0, 'syntax highlighting API did not generate code tokens');
     assert(initial.sideBarUsesPublicScroll, 'component sidebar does not use the public .uzu-scroll class');
     assert(initial.documentedPanelCount === initial.panelCount, `documented panel count ${initial.documentedPanelCount} does not match panel count ${initial.panelCount}`);
+    assert(initial.demoTabPanelCount === initial.panelCount, `component preview/code tabs ${initial.demoTabPanelCount} do not match panel count ${initial.panelCount}`);
     assert(initial.highlightApi, 'code highlighting API is not exposed');
     assert(!initial.componentDocsApi, 'component docs API should not be exposed');
     assert(!initial.retiredSiteRuntimeApis, 'retired site-owned UI runtime APIs are still exposed');
@@ -340,6 +348,56 @@ async function runBrowserSmoke() {
       );
     }
     assertNoOverflow(initial);
+
+    const demoTabs = await evaluate(cdp, 'component preview/code tabs interaction', `(() => {
+      const panel = document.querySelector('#component-colors');
+      const previewTab = panel.querySelector('[data-uzu-tab-target="#demo-colors-preview"]');
+      const codeTab = panel.querySelector('[data-uzu-tab-target="#demo-colors-code"]');
+      const preview = panel.querySelector('#demo-colors-preview');
+      const code = panel.querySelector('#demo-colors-code');
+      const before = {
+        previewHidden: preview.hidden,
+        codeHidden: code.hidden,
+        previewSelected: previewTab.getAttribute('aria-selected'),
+        codeSelected: codeTab.getAttribute('aria-selected')
+      };
+      codeTab.click();
+      const afterCode = {
+        previewHidden: preview.hidden,
+        codeHidden: code.hidden,
+        previewSelected: previewTab.getAttribute('aria-selected'),
+        codeSelected: codeTab.getAttribute('aria-selected')
+      };
+      previewTab.click();
+      const afterPreview = {
+        previewHidden: preview.hidden,
+        codeHidden: code.hidden,
+        previewSelected: previewTab.getAttribute('aria-selected'),
+        codeSelected: codeTab.getAttribute('aria-selected')
+      };
+      return { before, afterCode, afterPreview };
+    })()`);
+    assert(
+      !demoTabs.before.previewHidden
+      && demoTabs.before.codeHidden
+      && demoTabs.before.previewSelected === 'true'
+      && demoTabs.before.codeSelected === 'false',
+      `component demo tabs should start on preview: ${JSON.stringify(demoTabs)}`
+    );
+    assert(
+      demoTabs.afterCode.previewHidden
+      && !demoTabs.afterCode.codeHidden
+      && demoTabs.afterCode.previewSelected === 'false'
+      && demoTabs.afterCode.codeSelected === 'true',
+      `component demo tabs did not switch to code: ${JSON.stringify(demoTabs)}`
+    );
+    assert(
+      !demoTabs.afterPreview.previewHidden
+      && demoTabs.afterPreview.codeHidden
+      && demoTabs.afterPreview.previewSelected === 'true'
+      && demoTabs.afterPreview.codeSelected === 'false',
+      `component demo tabs did not switch back to preview: ${JSON.stringify(demoTabs)}`
+    );
 
     const rawBacktickCopy = await evaluate(cdp, 'raw backticks in section descriptions', `(() =>
       Array.from(document.querySelectorAll('.uzu-section-head .uzu-text'))
