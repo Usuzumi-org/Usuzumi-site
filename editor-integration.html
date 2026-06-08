@@ -9,71 +9,79 @@
   <script src="./assets/vendor/usuzumi/ui/usuzumi.js" defer></script>
 </head>
 <body class="uzu-app">
-  <div class="uzu-floating-controls" aria-label="Page settings">
-    <button class="uzu-icon-button uzu-language-toggle" type="button" data-uzu-language-toggle data-uzu-language-key="usuzumi-site-language" aria-label="Switch language">ZH</button>
-    <button class="uzu-icon-button uzu-theme-toggle" type="button" data-uzu-theme-toggle aria-label="Switch theme">
-      <svg class="uzu-icon-moon" viewBox="0 0 24 24" aria-hidden="true" fill="none">
-        <path d="M20.3 15.1A7.6 7.6 0 0 1 8.9 3.7 8.9 8.9 0 1 0 20.3 15.1Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
-      </svg>
-      <svg class="uzu-icon-sun" viewBox="0 0 24 24" aria-hidden="true" fill="none">
-        <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.7"/>
-        <path d="M12 2.8v2.1M12 19.1v2.1M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M2.8 12h2.1M19.1 12h2.1M4.9 19.1l1.5-1.5M17.6 6.4l1.5-1.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-      </svg>
-    </button>
-  </div>
-
   <main class="uzu-page uzu-page-narrow">
     <header class="uzu-topbar">
       <span class="uzu-brand-link">Usuzumi</span>
       <nav class="uzu-nav" aria-label="Site navigation">
-        <a href="index.html"><span data-lang="zh">首页</span><span data-lang="en">Home</span></a>
-        <a href="components.html"><span data-lang="zh">组件</span><span data-lang="en">Components</span></a>
-        <a href="components.html#component-layout-primitives"><span data-lang="zh">文档</span><span data-lang="en">Docs</span></a>
-        <a href="editor-integration.html" aria-current="page"><span data-lang="zh">编辑器接入</span><span data-lang="en">Editor integration</span></a>
+        <a href="index.html"><span data-lang="zh">首页</span><span data-lang="en" data-uzu-language-hidden>Home</span></a>
+        <a href="components.html"><span data-lang="zh">组件</span><span data-lang="en" data-uzu-language-hidden>Components</span></a>
+        <a href="editor-integration.html" aria-current="page"><span data-lang="zh">编辑器接入</span><span data-lang="en" data-uzu-language-hidden>Editor integration</span></a>
         <a href="https://github.com/Usuzumi-org/Usuzumi">Github</a>
       </nav>
+      <div class="uzu-topbar-actions" aria-label="Page settings">
+        <span class="uzu-language-select" data-uzu-language-select data-uzu-language-key="usuzumi-site-language">
+          <button class="uzu-icon-button uzu-language-trigger" type="button" data-uzu-language-trigger aria-label="Language">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none">
+              <path d="M4 7h7M7.5 4v3M10.5 7c-.7 3.2-2.6 5.5-5.5 7M6.2 9.6c1 1.8 2.4 3.2 4.2 4.2M13 20l4-10 4 10M14.3 17h5.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <span class="uzu-language-menu" data-uzu-language-menu>
+            <button class="uzu-language-option is-selected" type="button" data-uzu-language-option data-uzu-language-value="zh" data-uzu-language-html-lang="zh-CN">中文</button>
+            <button class="uzu-language-option" type="button" data-uzu-language-option data-uzu-language-value="en" data-uzu-language-html-lang="en">English</button>
+          </span>
+        </span>
+        <button class="uzu-icon-button uzu-theme-toggle" type="button" data-uzu-theme-toggle aria-label="Switch theme">
+          <svg class="uzu-icon-moon" viewBox="0 0 24 24" aria-hidden="true" fill="none">
+            <path d="M20.3 15.1A7.6 7.6 0 0 1 8.9 3.7 8.9 8.9 0 1 0 20.3 15.1Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+          </svg>
+          <svg class="uzu-icon-sun" viewBox="0 0 24 24" aria-hidden="true" fill="none">
+            <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.7"/>
+            <path d="M12 2.8v2.1M12 19.1v2.1M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M2.8 12h2.1M19.1 12h2.1M4.9 19.1l1.5-1.5M17.6 6.4l1.5-1.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
     </header>
 
     <section class="uzu-section uzu-no-border">
       <div class="uzu-section-head">
         <p class="uzu-section-label">Guide</p>
-        <h1 class="uzu-section-title"><span data-lang="zh">外部编辑器接入指南</span><span data-lang="en">External Editor Integration</span></h1>
+        <h1 class="uzu-section-title"><span data-lang="zh">外部编辑器接入指南</span><span data-lang="en" data-uzu-language-hidden>External Editor Integration</span></h1>
         <p class="uzu-body-large">
           <span data-lang="zh">Usuzumi 提供编辑器外壳、源码区、预览区、轻量 Markdown 预览和事件桥接；本站不再携带站点专用编辑器运行时。</span>
-          <span data-lang="en">Usuzumi provides editor shells, source regions, preview regions, light Markdown preview, and event bridges; this site no longer ships site-owned editor runtime.</span>
+          <span data-lang="en" data-uzu-language-hidden>Usuzumi provides editor shells, source regions, preview regions, light Markdown preview, and event bridges; this site no longer ships site-owned editor runtime.</span>
         </p>
       </div>
     </section>
 
     <section class="uzu-section" aria-labelledby="editor-boundary-title">
       <div class="uzu-section-head">
-        <p class="uzu-section-label"><span data-lang="zh">边界</span><span data-lang="en">Boundary</span></p>
-        <h2 class="uzu-section-title" id="editor-boundary-title"><span data-lang="zh">外壳属于 Usuzumi，编辑能力属于项目</span><span data-lang="en">Usuzumi owns the shell; applications own editing capability.</span></h2>
+        <p class="uzu-section-label"><span data-lang="zh">边界</span><span data-lang="en" data-uzu-language-hidden>Boundary</span></p>
+        <h2 class="uzu-section-title" id="editor-boundary-title"><span data-lang="zh">外壳属于 Usuzumi，编辑能力属于项目</span><span data-lang="en" data-uzu-language-hidden>Usuzumi owns the shell; applications own editing capability.</span></h2>
       </div>
       <div class="uzu-table-wrap">
         <table class="uzu-table">
           <thead>
             <tr>
-              <th><span data-lang="zh">能力</span><span data-lang="en">Capability</span></th>
-              <th><span data-lang="zh">Usuzumi 提供</span><span data-lang="en">Provided by Usuzumi</span></th>
-              <th><span data-lang="zh">项目接入</span><span data-lang="en">Application integration</span></th>
+              <th><span data-lang="zh">能力</span><span data-lang="en" data-uzu-language-hidden>Capability</span></th>
+              <th><span data-lang="zh">Usuzumi 提供</span><span data-lang="en" data-uzu-language-hidden>Provided by Usuzumi</span></th>
+              <th><span data-lang="zh">项目接入</span><span data-lang="en" data-uzu-language-hidden>Application integration</span></th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td>Markdown</td>
               <td><code class="uzu-code uzu-break-anywhere">.uzu-markdown-editor</code>、<code class="uzu-code uzu-break-anywhere">data-uzu-markdown-source</code>、<code class="uzu-code uzu-break-anywhere">data-uzu-markdown-preview</code></td>
-              <td><span data-lang="zh">本站使用 Usuzumi 公共运行时渲染轻量预览。</span><span data-lang="en">This site renders light previews with the public Usuzumi runtime.</span></td>
+              <td><span data-lang="zh">本站使用 Usuzumi 公共运行时渲染轻量预览。</span><span data-lang="en" data-uzu-language-hidden>This site renders light previews with the public Usuzumi runtime.</span></td>
             </tr>
             <tr>
-              <td><span data-lang="zh">短代码输入</span><span data-lang="en">Short code input</span></td>
+              <td><span data-lang="zh">短代码输入</span><span data-lang="en" data-uzu-language-hidden>Short code input</span></td>
               <td><code class="uzu-code uzu-break-anywhere">textarea.uzu-code-editor</code></td>
-              <td><span data-lang="zh">使用原生 textarea 事件保存内容。</span><span data-lang="en">Use native textarea events to save content.</span></td>
+              <td><span data-lang="zh">使用原生 textarea 事件保存内容。</span><span data-lang="en" data-uzu-language-hidden>Use native textarea events to save content.</span></td>
             </tr>
             <tr>
-              <td><span data-lang="zh">通用编辑器外壳</span><span data-lang="en">Generic editor shell</span></td>
+              <td><span data-lang="zh">通用编辑器外壳</span><span data-lang="en" data-uzu-language-hidden>Generic editor shell</span></td>
               <td><code class="uzu-code uzu-break-anywhere">.uzu-editor</code>、<code class="uzu-code uzu-break-anywhere">.uzu-editor-toolbar</code>、<code class="uzu-code uzu-break-anywhere">.uzu-editor-surface</code></td>
-              <td><span data-lang="zh">项目自行选择编辑器并挂载到外壳内。</span><span data-lang="en">Applications choose and mount their own editor engines inside the shell.</span></td>
+              <td><span data-lang="zh">项目自行选择编辑器并挂载到外壳内。</span><span data-lang="en" data-uzu-language-hidden>Applications choose and mount their own editor engines inside the shell.</span></td>
             </tr>
           </tbody>
         </table>
@@ -83,12 +91,12 @@
     <section class="uzu-section" aria-labelledby="markdown-title">
       <div class="uzu-section-head">
         <p class="uzu-section-label">Markdown</p>
-        <h2 class="uzu-section-title" id="markdown-title"><span data-lang="zh">Markdown：保留源码区和预览区</span><span data-lang="en">Markdown: keep source and preview separate.</span></h2>
+        <h2 class="uzu-section-title" id="markdown-title"><span data-lang="zh">Markdown：保留源码区和预览区</span><span data-lang="en" data-uzu-language-hidden>Markdown: keep source and preview separate.</span></h2>
       </div>
       <div class="uzu-alert uzu-alert-info">
         <div class="uzu-title-pair">
-          <h3><span data-lang="zh">运行时边界</span><span data-lang="en">Runtime boundary</span></h3>
-          <p><span data-lang="zh">组件页只加载 Usuzumi 公共 CSS 和运行时。需要更完整的 Markdown 策略时，业务项目可以在 Usuzumi 外壳上接入自己的解析器。</span><span data-lang="en">The component page only loads public Usuzumi CSS and runtime. Applications can connect their own parser to the Usuzumi shell when they need a fuller Markdown policy.</span></p>
+          <h3><span data-lang="zh">运行时边界</span><span data-lang="en" data-uzu-language-hidden>Runtime boundary</span></h3>
+          <p><span data-lang="zh">组件页只加载 Usuzumi 公共 CSS 和运行时。需要更完整的 Markdown 策略时，业务项目可以在 Usuzumi 外壳上接入自己的解析器。</span><span data-lang="en" data-uzu-language-hidden>The component page only loads public Usuzumi CSS and runtime. Applications can connect their own parser to the Usuzumi shell when they need a fuller Markdown policy.</span></p>
         </div>
       </div>
       <div class="uzu-code-block" style="--uzu-code-block-max-height: 520px">
@@ -128,20 +136,20 @@ render(source.value);</code></pre>
 
     <section class="uzu-section" aria-labelledby="native-title">
       <div class="uzu-section-head">
-        <p class="uzu-section-label"><span data-lang="zh">原生输入</span><span data-lang="en">Native input</span></p>
-        <h2 class="uzu-section-title" id="native-title"><span data-lang="zh">短代码和纯文本保持原生</span><span data-lang="en">Keep short code and plain text native.</span></h2>
+        <p class="uzu-section-label"><span data-lang="zh">原生输入</span><span data-lang="en" data-uzu-language-hidden>Native input</span></p>
+        <h2 class="uzu-section-title" id="native-title"><span data-lang="zh">短代码和纯文本保持原生</span><span data-lang="en" data-uzu-language-hidden>Keep short code and plain text native.</span></h2>
       </div>
       <div class="uzu-grid uzu-grid-2">
         <article class="uzu-card">
           <div class="uzu-title-pair">
             <h3><code class="uzu-code">textarea.uzu-code-editor</code></h3>
-            <p><span data-lang="zh">适合配置片段、命令文本和短代码。</span><span data-lang="en">For configuration snippets, command text, and short code.</span></p>
+            <p><span data-lang="zh">适合配置片段、命令文本和短代码。</span><span data-lang="en" data-uzu-language-hidden>For configuration snippets, command text, and short code.</span></p>
           </div>
         </article>
         <article class="uzu-card">
           <div class="uzu-title-pair">
             <h3><code class="uzu-code">textarea.uzu-plain-editor</code></h3>
-            <p><span data-lang="zh">适合备注、说明和无格式长文本。</span><span data-lang="en">For notes, descriptions, and unformatted long text.</span></p>
+            <p><span data-lang="zh">适合备注、说明和无格式长文本。</span><span data-lang="en" data-uzu-language-hidden>For notes, descriptions, and unformatted long text.</span></p>
           </div>
         </article>
       </div>
@@ -149,7 +157,7 @@ render(source.value);</code></pre>
     <footer class="uzu-footer">
       <span>&copy; 2026 Usuzumi</span>
       <span class="uzu-divider">·</span>
-      <a href="components.html"><span data-lang="zh">组件</span><span data-lang="en">Components</span></a>
+      <a href="components.html"><span data-lang="zh">组件</span><span data-lang="en" data-uzu-language-hidden>Components</span></a>
       <span class="uzu-divider">·</span>
       <a href="https://github.com/Usuzumi-org/Usuzumi">Github</a>
     </footer>

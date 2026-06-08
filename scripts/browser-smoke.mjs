@@ -283,12 +283,30 @@ async function runBrowserSmoke() {
       horizontalOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       highlightTokenCount: window.Usuzumi?.highlightCode?.("const label = 'Usuzumi';", 'javascript')?.fragment?.querySelectorAll?.('.uzu-code-token')?.length || 0,
       sideBarUsesPublicScroll: Boolean(document.querySelector('.uzu-sidebar.uzu-scroll')),
-      documentedPanelCount: Array.from(document.querySelectorAll('.uzu-panel[id^="component-"]')).filter((panel) =>
-        panel.textContent.includes('Component Docs')
-        && panel.querySelector('.uzu-callout')
+      languageSelectorProbe: (() => {
+        const pageSelect = document.querySelector('main > .uzu-topbar [data-uzu-language-select]');
+        const retiredToggleSelector = '[data-uzu-language-' + 'toggle], .uzu-language-' + 'toggle';
+        return {
+          legacyToggleCount: document.querySelectorAll(retiredToggleSelector).length,
+          selectCount: document.querySelectorAll('[data-uzu-language-select]').length,
+          pageSelectExists: Boolean(pageSelect),
+          pageTriggerExists: Boolean(pageSelect?.querySelector('[data-uzu-language-trigger]')),
+          pageMenuExists: Boolean(pageSelect?.querySelector('[data-uzu-language-menu]')),
+          pageOptionValues: Array.from(pageSelect?.querySelectorAll('[data-uzu-language-option]') || [])
+            .map((option) => option.getAttribute('data-uzu-language-value') || '')
+        };
+      })(),
+      catalogStructurePanelCount: Array.from(document.querySelectorAll('.uzu-panel[id^="component-"]')).filter((panel) =>
+        panel.querySelector('.uzu-callout')
         && panel.querySelector('.uzu-table')
         && panel.querySelector('.uzu-code-block')
         && panel.querySelector('[data-uzu-code-copy]')
+      ).length,
+      catalogNotesPanelCount: Array.from(document.querySelectorAll('.uzu-panel[id^="component-"]')).filter((panel) =>
+        Array.from(panel.querySelectorAll('.uzu-card > .uzu-title-pair > h3')).some((heading) => {
+          const text = heading.innerText.trim();
+          return text.includes('组件文档') || text.includes('Component Docs') || text.includes('接口') || text.includes('Interface');
+        })
       ).length,
       demoTabPanelCount: Array.from(document.querySelectorAll('.uzu-panel[id^="component-"]')).filter((panel) =>
         panel.querySelector('[aria-label="Component demo view"][data-uzu-tabs]')
@@ -297,6 +315,40 @@ async function runBrowserSmoke() {
         && panel.querySelector('[id^="demo-"][id$="-preview"]')
         && panel.querySelector('[id^="demo-"][id$="-code"] .uzu-code-block')
       ).length,
+      pageTopbarActionsProbe: (() => {
+        const probe = (topbar, actions) => {
+          const topbarRect = topbar?.getBoundingClientRect();
+          const actionsRect = actions?.getBoundingClientRect();
+          const topbarStyle = topbar ? getComputedStyle(topbar) : null;
+          const actionsStyle = actions ? getComputedStyle(actions) : null;
+          return {
+            exists: Boolean(topbar && actions),
+            topbarDisplay: topbarStyle?.display || '',
+            actionsDisplay: actionsStyle?.display || '',
+            actionsFlexShrink: actionsStyle?.flexShrink || '',
+            actionsRightDelta: topbarRect && actionsRect ? Math.abs(actionsRect.right - topbarRect.right) : 9999,
+            actionsTop: actionsRect?.top ?? 0,
+            topbarTop: topbarRect?.top ?? 0,
+            actionsBottom: actionsRect?.bottom ?? 0,
+            topbarBottom: topbarRect?.bottom ?? 0
+          };
+        };
+        return probe(document.querySelector('main > .uzu-topbar'), document.querySelector('main > .uzu-topbar > .uzu-topbar-actions'));
+      })(),
+      sidebarScrollGapProbe: (() => {
+        const sidebar = document.querySelector('.uzu-sidebar.uzu-scroll-area');
+        const active = sidebar?.querySelector('.uzu-panel-nav-button[aria-pressed="true"], .uzu-panel-nav-button.is-active');
+        const sidebarRect = sidebar?.getBoundingClientRect();
+        const activeRect = active?.getBoundingClientRect();
+        const sidebarStyle = sidebar ? getComputedStyle(sidebar) : null;
+        return {
+          exists: Boolean(sidebar && active),
+          overflowY: sidebarStyle?.overflowY || '',
+          scrollbarGutter: sidebarStyle?.scrollbarGutter || '',
+          paddingInlineEnd: sidebarStyle?.paddingInlineEnd || '',
+          activeRightGap: sidebarRect && activeRect ? Math.round(sidebarRect.right - activeRect.right) : 0
+        };
+      })(),
       highlightApi: Boolean(window.Usuzumi?.highlightCodeBlocks),
       componentDocsApi: Boolean(window.Usuzumi?.initComponentDocs),
       retiredSiteRuntimeApis: Boolean(window.UsuzumiComponentEditorLoader || window.UsuzumiComponentMarkdownEditor),
@@ -322,8 +374,26 @@ async function runBrowserSmoke() {
     assert(initial.visiblePanel === 'component-colors', `unexpected initial panel: ${initial.visiblePanel}`);
     assert(initial.highlightTokenCount > 0, 'syntax highlighting API did not generate code tokens');
     assert(initial.sideBarUsesPublicScroll, 'component sidebar does not use the public .uzu-scroll class');
-    assert(initial.documentedPanelCount === initial.panelCount, `documented panel count ${initial.documentedPanelCount} does not match panel count ${initial.panelCount}`);
+    assert(initial.sidebarScrollGapProbe.exists, `component sidebar scroll gap probe is missing public structure: ${JSON.stringify(initial.sidebarScrollGapProbe)}`);
+    assert(
+      initial.sidebarScrollGapProbe.overflowY === 'auto'
+        && String(initial.sidebarScrollGapProbe.scrollbarGutter).includes('stable')
+        && Number.parseFloat(initial.sidebarScrollGapProbe.paddingInlineEnd) >= 12
+        && initial.sidebarScrollGapProbe.activeRightGap >= 18,
+      `component sidebar should keep active items away from its scrollbar: ${JSON.stringify(initial.sidebarScrollGapProbe)}`
+    );
+    assert(initial.languageSelectorProbe.legacyToggleCount === 0, `component page should not expose retired language toggle controls: ${JSON.stringify(initial.languageSelectorProbe)}`);
+    assert(initial.languageSelectorProbe.selectCount >= 2, `component page should expose page and preview language selectors: ${JSON.stringify(initial.languageSelectorProbe)}`);
+    assert(initial.languageSelectorProbe.pageSelectExists && initial.languageSelectorProbe.pageTriggerExists && initial.languageSelectorProbe.pageMenuExists, `page topbar language selector is incomplete: ${JSON.stringify(initial.languageSelectorProbe)}`);
+    assert(initial.languageSelectorProbe.pageOptionValues.includes('zh') && initial.languageSelectorProbe.pageOptionValues.includes('en'), `page topbar language selector should provide concrete options: ${JSON.stringify(initial.languageSelectorProbe)}`);
+    assert(initial.catalogStructurePanelCount === initial.panelCount, `catalog structure panel count ${initial.catalogStructurePanelCount} does not match panel count ${initial.panelCount}`);
+    assert(initial.catalogNotesPanelCount === initial.panelCount, `catalog notes panel count ${initial.catalogNotesPanelCount} does not match panel count ${initial.panelCount}`);
     assert(initial.demoTabPanelCount === initial.panelCount, `component preview/code tabs ${initial.demoTabPanelCount} do not match panel count ${initial.panelCount}`);
+    const pageTopbarProbe = initial.pageTopbarActionsProbe;
+    assert(pageTopbarProbe.exists, `component page header should include the public actions slot: ${JSON.stringify(pageTopbarProbe)}`);
+    assert(pageTopbarProbe.topbarDisplay === 'flex' && pageTopbarProbe.actionsDisplay === 'flex' && pageTopbarProbe.actionsFlexShrink === '0', `component page header actions should use the public flex contract: ${JSON.stringify(pageTopbarProbe)}`);
+    assert(pageTopbarProbe.actionsRightDelta <= 1, `component page header actions should align to the topbar end: ${JSON.stringify(pageTopbarProbe)}`);
+    assert(pageTopbarProbe.actionsTop >= pageTopbarProbe.topbarTop - 1 && pageTopbarProbe.actionsBottom <= pageTopbarProbe.topbarBottom + 1, `component page header actions should stay inside the topbar row: ${JSON.stringify(pageTopbarProbe)}`);
     assert(initial.highlightApi, 'code highlighting API is not exposed');
     assert(!initial.componentDocsApi, 'component docs API should not be exposed');
     assert(!initial.retiredSiteRuntimeApis, 'retired site-owned UI runtime APIs are still exposed');
@@ -406,9 +476,795 @@ async function runBrowserSmoke() {
     )()`);
     assert(rawBacktickCopy.length === 0, `component page has raw markdown backticks in visible descriptions: ${JSON.stringify(rawBacktickCopy)}`);
 
+    await openPanel(cdp, 'component-topbar');
+    const topbarPanel = await waitForPanel(cdp, 'component-topbar', (state) => state.visiblePanel === 'component-topbar');
+    assertPanelState('component-topbar', topbarPanel);
+    const previewTopbarProbe = await evaluate(cdp, 'component topbar preview actions position', `(() => {
+      const topbar = document.querySelector('#component-topbar #demo-topbar-preview .uzu-topbar');
+      const actions = document.querySelector('#component-topbar #demo-topbar-preview .uzu-topbar-actions');
+      const topbarRect = topbar?.getBoundingClientRect();
+      const actionsRect = actions?.getBoundingClientRect();
+      const topbarStyle = topbar ? getComputedStyle(topbar) : null;
+      const actionsStyle = actions ? getComputedStyle(actions) : null;
+      return {
+        exists: Boolean(topbar && actions),
+        topbarDisplay: topbarStyle?.display || '',
+        topbarMarginBottom: topbarStyle?.marginBottom || '',
+        actionsDisplay: actionsStyle?.display || '',
+        actionsFlexShrink: actionsStyle?.flexShrink || '',
+        actionsRightDelta: topbarRect && actionsRect ? Math.abs(actionsRect.right - topbarRect.right) : 9999,
+        actionsTop: actionsRect?.top ?? 0,
+        topbarTop: topbarRect?.top ?? 0,
+        actionsBottom: actionsRect?.bottom ?? 0,
+        topbarBottom: topbarRect?.bottom ?? 0
+      };
+    })()`);
+    assert(previewTopbarProbe.exists, `component topbar preview should include the public actions slot: ${JSON.stringify(previewTopbarProbe)}`);
+    assert(previewTopbarProbe.topbarDisplay === 'flex' && previewTopbarProbe.actionsDisplay === 'flex' && previewTopbarProbe.actionsFlexShrink === '0', `component topbar preview actions should use the public flex contract: ${JSON.stringify(previewTopbarProbe)}`);
+    assert(previewTopbarProbe.topbarMarginBottom === '0px', `component topbar preview should remove page-level bottom spacing with a public variable: ${JSON.stringify(previewTopbarProbe)}`);
+    assert(previewTopbarProbe.actionsRightDelta <= 1, `component topbar preview actions should align to the topbar end: ${JSON.stringify(previewTopbarProbe)}`);
+    assert(previewTopbarProbe.actionsTop >= previewTopbarProbe.topbarTop - 1 && previewTopbarProbe.actionsBottom <= previewTopbarProbe.topbarBottom + 1, `component topbar preview actions should stay inside the topbar row: ${JSON.stringify(previewTopbarProbe)}`);
+
+    const localLanguage = await evaluate(cdp, 'component topbar local language selector interaction', `(() => {
+      const pageRoot = document.documentElement;
+      const root = document.querySelector('#demo-topbar-language-root');
+      const select = root?.querySelector('[data-uzu-language-select]');
+      const trigger = select?.querySelector('[data-uzu-language-trigger]');
+      const menu = select?.querySelector('[data-uzu-language-menu]');
+      const option = select?.querySelector('[data-uzu-language-option][data-uzu-language-value="en"]');
+      const zhCopy = root?.querySelector('[data-lang="zh"]');
+      const enCopy = root?.querySelector('[data-lang="en"]');
+      if (!root || !select || !trigger || !menu || !option || !zhCopy || !enCopy) throw new Error('Missing local language selector preview controls');
+      const isHidden = (element) => element.hasAttribute('data-uzu-language-hidden') || getComputedStyle(element).display === 'none';
+      const before = {
+        pageLanguage: pageRoot.getAttribute('data-language') || '',
+        rootLanguage: root.getAttribute('data-language') || '',
+        rootUzuLang: root.getAttribute('data-uzu-lang') || '',
+        rootHtmlLang: root.getAttribute('lang') || '',
+        zhHidden: isHidden(zhCopy),
+        enHidden: isHidden(enCopy),
+        menuHidden: menu.hidden,
+        triggerExpanded: trigger.getAttribute('aria-expanded')
+      };
+      trigger.click();
+      const afterOpen = {
+        menuHidden: menu.hidden,
+        menuDisplay: getComputedStyle(menu).display,
+        openClass: select.classList.contains('is-open'),
+        triggerExpanded: trigger.getAttribute('aria-expanded')
+      };
+      option.click();
+      const afterChoose = {
+        pageLanguage: pageRoot.getAttribute('data-language') || '',
+        rootLanguage: root.getAttribute('data-language') || '',
+        rootUzuLang: root.getAttribute('data-uzu-lang') || '',
+        rootHtmlLang: root.getAttribute('lang') || '',
+        zhHidden: isHidden(zhCopy),
+        enHidden: isHidden(enCopy),
+        selectedText: select.querySelector('[data-uzu-language-option].is-selected')?.textContent.trim() || '',
+        selectedValue: select.querySelector('[data-uzu-language-option].is-selected')?.getAttribute('data-uzu-language-value') || '',
+        triggerExpanded: trigger.getAttribute('aria-expanded'),
+        closingOrHidden: select.classList.contains('is-closing') || menu.hidden
+      };
+      return { before, afterOpen, afterChoose };
+    })()`);
+    assert(
+      localLanguage.before.pageLanguage === 'zh'
+      && localLanguage.before.rootLanguage === 'zh'
+      && localLanguage.before.rootUzuLang === 'zh'
+      && localLanguage.before.rootHtmlLang === 'zh-CN'
+      && !localLanguage.before.zhHidden
+      && localLanguage.before.enHidden
+      && localLanguage.before.menuHidden
+      && localLanguage.before.triggerExpanded === 'false',
+      `local language preview should start in Chinese without affecting the page: ${JSON.stringify(localLanguage)}`
+    );
+    assert(
+      !localLanguage.afterOpen.menuHidden
+      && localLanguage.afterOpen.menuDisplay === 'grid'
+      && localLanguage.afterOpen.openClass
+      && localLanguage.afterOpen.triggerExpanded === 'true',
+      `local language menu did not open like a selector: ${JSON.stringify(localLanguage)}`
+    );
+    assert(
+      localLanguage.afterChoose.pageLanguage === 'zh'
+      && localLanguage.afterChoose.rootLanguage === 'en'
+      && localLanguage.afterChoose.rootUzuLang === 'en'
+      && localLanguage.afterChoose.rootHtmlLang === 'en'
+      && localLanguage.afterChoose.zhHidden
+      && !localLanguage.afterChoose.enHidden
+      && localLanguage.afterChoose.selectedValue === 'en'
+      && localLanguage.afterChoose.selectedText === 'English'
+      && localLanguage.afterChoose.triggerExpanded === 'false'
+      && localLanguage.afterChoose.closingOrHidden,
+      `local language selector should update only its target root: ${JSON.stringify(localLanguage)}`
+    );
+
+    const pageLanguage = await evaluate(cdp, 'page language selector interaction', `(() => {
+      const root = document.documentElement;
+      const select = document.querySelector('main > .uzu-topbar [data-uzu-language-select]');
+      const trigger = select?.querySelector('[data-uzu-language-trigger]');
+      const menu = select?.querySelector('[data-uzu-language-menu]');
+      const option = select?.querySelector('[data-uzu-language-option][data-uzu-language-value="en"]');
+      const zhCopy = document.querySelector('main > .uzu-topbar [data-lang="zh"]');
+      const enCopy = document.querySelector('main > .uzu-topbar [data-lang="en"]');
+      if (!select || !trigger || !menu || !option || !zhCopy || !enCopy) throw new Error('Missing page language selector controls');
+      const events = [];
+      select.addEventListener('uzu-language-change', (event) => {
+        events.push({
+          language: event.detail.language,
+          previousLanguage: event.detail.previousLanguage,
+          htmlLang: event.detail.htmlLang,
+          key: event.detail.key
+        });
+      }, { once: true });
+      const isHidden = (element) => element.hasAttribute('data-uzu-language-hidden') || getComputedStyle(element).display === 'none';
+      const before = {
+        rootLanguage: root.getAttribute('data-language') || '',
+        rootUzuLang: root.getAttribute('data-uzu-lang') || '',
+        rootHtmlLang: root.getAttribute('lang') || '',
+        zhHidden: isHidden(zhCopy),
+        enHidden: isHidden(enCopy),
+        menuHidden: menu.hidden,
+        triggerExpanded: trigger.getAttribute('aria-expanded')
+      };
+      trigger.click();
+      const afterOpen = {
+        menuHidden: menu.hidden,
+        menuDisplay: getComputedStyle(menu).display,
+        openClass: select.classList.contains('is-open'),
+        triggerExpanded: trigger.getAttribute('aria-expanded')
+      };
+      option.click();
+      const afterChoose = {
+        rootLanguage: root.getAttribute('data-language') || '',
+        rootUzuLang: root.getAttribute('data-uzu-lang') || '',
+        rootHtmlLang: root.getAttribute('lang') || '',
+        zhHidden: isHidden(zhCopy),
+        enHidden: isHidden(enCopy),
+        selectedText: select.querySelector('[data-uzu-language-option].is-selected')?.textContent.trim() || '',
+        selectedValue: select.querySelector('[data-uzu-language-option].is-selected')?.getAttribute('data-uzu-language-value') || '',
+        triggerExpanded: trigger.getAttribute('aria-expanded'),
+        closingOrHidden: select.classList.contains('is-closing') || menu.hidden,
+        events
+      };
+      return { before, afterOpen, afterChoose };
+    })()`);
+    assert(
+      pageLanguage.before.rootLanguage === 'zh'
+      && pageLanguage.before.rootUzuLang === 'zh'
+      && pageLanguage.before.rootHtmlLang === 'zh-CN'
+      && !pageLanguage.before.zhHidden
+      && pageLanguage.before.enHidden
+      && pageLanguage.before.menuHidden
+      && pageLanguage.before.triggerExpanded === 'false',
+      `page language selector should start from the document language state: ${JSON.stringify(pageLanguage)}`
+    );
+    assert(
+      !pageLanguage.afterOpen.menuHidden
+      && pageLanguage.afterOpen.menuDisplay === 'grid'
+      && pageLanguage.afterOpen.openClass
+      && pageLanguage.afterOpen.triggerExpanded === 'true',
+      `page language menu did not open like a selector: ${JSON.stringify(pageLanguage)}`
+    );
+    assert(
+      pageLanguage.afterChoose.rootLanguage === 'en'
+      && pageLanguage.afterChoose.rootUzuLang === 'en'
+      && pageLanguage.afterChoose.rootHtmlLang === 'en'
+      && pageLanguage.afterChoose.zhHidden
+      && !pageLanguage.afterChoose.enHidden
+      && pageLanguage.afterChoose.selectedValue === 'en'
+      && pageLanguage.afterChoose.selectedText === 'English'
+      && pageLanguage.afterChoose.triggerExpanded === 'false'
+      && pageLanguage.afterChoose.closingOrHidden
+      && pageLanguage.afterChoose.events.length === 1
+      && pageLanguage.afterChoose.events[0].language === 'en'
+      && pageLanguage.afterChoose.events[0].previousLanguage === 'zh'
+      && pageLanguage.afterChoose.events[0].htmlLang === 'en',
+      `page language selector should update the document root and emit a change event: ${JSON.stringify(pageLanguage)}`
+    );
+
+    await evaluate(cdp, 'reset page language to Chinese for localized component code checks', `(() => {
+      window.Usuzumi.applyLanguage(document.documentElement, 'zh', '', 'zh-CN');
+      return true;
+    })()`);
+
+    await openPanel(cdp, 'component-layout-primitives');
+    const layoutPrimitivesPanel = await waitForPanel(cdp, 'component-layout-primitives', (state) => state.visiblePanel === 'component-layout-primitives');
+    assertPanelState('component-layout-primitives', layoutPrimitivesPanel);
+    const layoutPrimitivesProbe = await evaluate(cdp, 'component layout primitives composition and localized code', `(() => {
+      const panel = document.querySelector('#component-layout-primitives');
+      const preview = panel?.querySelector('#demo-layout-primitives-preview');
+      const codeTab = panel?.querySelector('[data-uzu-tab-target="#demo-layout-primitives-code"]');
+      const codePanel = panel?.querySelector('#demo-layout-primitives-code');
+      if (!panel || !preview || !codeTab || !codePanel) throw new Error('Missing layout primitives preview controls');
+      const previewText = preview.innerText;
+      const card = preview.querySelector(':scope > section.uzu-card.uzu-stack');
+      const scrollArea = preview.querySelector('.uzu-scroll-area.uzu-stack');
+      const scrollTitle = scrollArea?.querySelector('.uzu-title-pair');
+      const scrollAreaRect = scrollArea?.getBoundingClientRect();
+      const scrollTitleRect = scrollTitle?.getBoundingClientRect();
+      const scrollTopGap = scrollAreaRect && scrollTitleRect ? Math.round(scrollTitleRect.top - scrollAreaRect.top) : null;
+      const scrollAreaClientHeight = scrollArea?.clientHeight || 0;
+      const scrollAreaScrollHeight = scrollArea?.scrollHeight || 0;
+      const sidebarLinks = Array.from(preview.querySelectorAll('.uzu-sidebar-layout .uzu-sidebar-nav a')).map((link) => link.getAttribute('href') || '');
+      codeTab.click();
+      const visiblePre = Array.from(codePanel.querySelectorAll('pre')).find((pre) =>
+        !pre.hidden
+        && !pre.hasAttribute('data-uzu-language-hidden')
+        && getComputedStyle(pre).display !== 'none'
+      );
+      return {
+        titleText: panel.querySelector('.uzu-section-title')?.innerText.trim() || '',
+        previewText,
+        cardLabelledby: card?.getAttribute('aria-labelledby') || '',
+        cardLabelText: card?.getAttribute('aria-labelledby') ? document.getElementById(card.getAttribute('aria-labelledby'))?.innerText.trim() || '' : '',
+        specimenCount: preview.querySelectorAll(':scope > section.uzu-card > .uzu-stack > article.uzu-callout').length,
+        hasDirectCardStack: Boolean(card),
+        hasPanelNav: Boolean(preview.querySelector('.uzu-panel-nav')),
+        hasSidebarLayout: Boolean(preview.querySelector('.uzu-sidebar-layout > .uzu-sidebar + main.uzu-stack')),
+        hasActionRow: Boolean(preview.querySelector('.uzu-flex .uzu-spacer + .uzu-button')),
+        hasAspect: Boolean(preview.querySelector('.uzu-aspect.uzu-card.uzu-center')),
+        hasLocalScroll: Boolean(scrollArea),
+        sidebarLinks,
+        sidebarTargetsExist: sidebarLinks.every((href) => href.startsWith('#') && Boolean(document.querySelector(href))),
+        scrollTopGap,
+        scrollAreaClientHeight,
+        scrollAreaScrollHeight,
+        visibleLang: visiblePre?.getAttribute('data-lang') || '',
+        visibleCode: visiblePre?.textContent || ''
+      };
+    })()`);
+    assert(
+      layoutPrimitivesProbe.titleText.includes('布局工具')
+      && layoutPrimitivesProbe.previewText.includes('布局原语标本')
+      && layoutPrimitivesProbe.previewText.includes('纵向节奏')
+      && layoutPrimitivesProbe.previewText.includes('行内分布')
+      && layoutPrimitivesProbe.previewText.includes('局部滚动')
+      && layoutPrimitivesProbe.previewText.includes('侧栏加正文')
+      && !layoutPrimitivesProbe.previewText.includes('Page Skeleton Composition')
+      && !layoutPrimitivesProbe.previewText.includes('Layout Primitive Specimens')
+      && layoutPrimitivesProbe.hasDirectCardStack
+      && layoutPrimitivesProbe.specimenCount === 5
+      && !layoutPrimitivesProbe.hasPanelNav
+      && layoutPrimitivesProbe.hasSidebarLayout
+      && layoutPrimitivesProbe.hasActionRow
+      && layoutPrimitivesProbe.hasAspect
+      && layoutPrimitivesProbe.hasLocalScroll
+      && layoutPrimitivesProbe.sidebarLinks.length === 2
+      && layoutPrimitivesProbe.sidebarLinks[0] === '#layout-primitives-stack-specimen'
+      && layoutPrimitivesProbe.sidebarLinks[1] === '#layout-primitives-scroll-specimen'
+      && layoutPrimitivesProbe.sidebarTargetsExist
+      && layoutPrimitivesProbe.cardLabelledby === 'layout-primitives-preview-title'
+      && layoutPrimitivesProbe.cardLabelText.includes('布局原语标本')
+      && layoutPrimitivesProbe.scrollTopGap !== null
+      && layoutPrimitivesProbe.scrollTopGap >= 12
+      && layoutPrimitivesProbe.scrollTopGap <= 24
+      && layoutPrimitivesProbe.scrollAreaClientHeight > 120
+      && layoutPrimitivesProbe.scrollAreaScrollHeight > layoutPrimitivesProbe.scrollAreaClientHeight,
+      `layout primitives preview should explain public layout utilities as clear vertical specimens: ${JSON.stringify(layoutPrimitivesProbe)}`
+    );
+    assert(
+      layoutPrimitivesProbe.visibleLang === 'zh'
+      && layoutPrimitivesProbe.visibleCode.includes('布局原语标本')
+      && layoutPrimitivesProbe.visibleCode.includes('行内分布')
+      && layoutPrimitivesProbe.visibleCode.includes('class="uzu-sidebar-layout"')
+      && layoutPrimitivesProbe.visibleCode.includes('uzu-aspect')
+      && layoutPrimitivesProbe.visibleCode.includes('uzu-scroll-area')
+      && !layoutPrimitivesProbe.visibleCode.includes('Layout primitive specimens')
+      && !layoutPrimitivesProbe.visibleCode.includes('Long content'),
+      `Chinese layout primitives code tab should show localized specimen code: ${JSON.stringify(layoutPrimitivesProbe)}`
+    );
+
+    await openPanel(cdp, 'component-popover');
+    const popoverPanel = await waitForPanel(cdp, 'component-popover', (state) => state.visiblePanel === 'component-popover');
+    assertPanelState('component-popover', popoverPanel);
+    const popoverProbe = await evaluate(cdp, 'component popover trigger context and localized code', `(async () => {
+      const panel = document.querySelector('#component-popover');
+      const preview = panel?.querySelector('#demo-popover-preview');
+      const codeTab = panel?.querySelector('[data-uzu-tab-target="#demo-popover-code"]');
+      const codePanel = panel?.querySelector('#demo-popover-code');
+      if (!panel || !preview || !codeTab || !codePanel) throw new Error('Missing popover preview controls');
+      const previewText = preview.innerText;
+      const root = preview.querySelector('[data-uzu-popover]');
+      const trigger = root?.querySelector('[data-uzu-popover-trigger]');
+      const surface = preview.querySelector('.uzu-popover');
+      const surfaceLabelledby = surface?.getAttribute('aria-labelledby') || '';
+      const surfaceLabelText = surfaceLabelledby ? document.getElementById(surfaceLabelledby)?.innerText.trim() || '' : '';
+      const surfaceAriaLabel = surface?.getAttribute('aria-label') || '';
+      const initialHidden = surface?.hidden ?? null;
+      const initialExpanded = trigger?.getAttribute('aria-expanded') || '';
+      trigger?.click();
+      await new Promise((resolve) => setTimeout(resolve, 80));
+      const open = root?.classList.contains('is-open') || false;
+      const expandedAfterOpen = trigger?.getAttribute('aria-expanded') || '';
+      const hiddenAfterOpen = surface?.hidden ?? null;
+      const openAnimation = surface ? getComputedStyle(surface).animationName : '';
+      const openText = preview.innerText;
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+      await new Promise((resolve) => setTimeout(resolve, 260));
+      const closedAfterEscape = Boolean(surface?.hidden && !root?.classList.contains('is-open'));
+      codeTab.click();
+      const visiblePre = Array.from(codePanel.querySelectorAll('pre')).find((pre) =>
+        !pre.hidden
+        && !pre.hasAttribute('data-uzu-language-hidden')
+        && getComputedStyle(pre).display !== 'none'
+      );
+      return {
+        titleText: panel.querySelector('.uzu-section-title')?.innerText.trim() || '',
+        previewText,
+        hasDirectPopover: Boolean(preview.querySelector(':scope > aside.uzu-popover')),
+        hasContextCard: Boolean(preview.querySelector(':scope > section.uzu-card.uzu-stack')),
+        hasRuntimeRoot: Boolean(root),
+        hasTriggerButton: Boolean(trigger && trigger.classList.contains('uzu-popover-trigger')),
+        hasPopoverSurface: Boolean(preview.querySelector('section.uzu-card [data-uzu-popover-content].uzu-popover.uzu-stack')),
+        checkboxCount: preview.querySelectorAll('.uzu-popover .uzu-check-row input[type="checkbox"]').length,
+        surfaceLabelledby,
+        surfaceLabelText,
+        surfaceAriaLabel,
+        initialHidden,
+        initialExpanded,
+        open,
+        expandedAfterOpen,
+        hiddenAfterOpen,
+        openAnimation,
+        openText,
+        closedAfterEscape,
+        visibleLang: visiblePre?.getAttribute('data-lang') || '',
+        visibleCode: visiblePre?.textContent || ''
+      };
+    })()`);
+    assert(
+      popoverProbe.titleText === '浮层'
+      && popoverProbe.previewText.includes('触发点旁的短设置')
+      && !popoverProbe.previewText.includes('显示选项')
+      && !popoverProbe.previewText.includes('Short Settings Beside A Trigger')
+      && !popoverProbe.previewText.includes('Display Options')
+      && !popoverProbe.hasDirectPopover
+      && popoverProbe.hasContextCard
+      && popoverProbe.hasRuntimeRoot
+      && popoverProbe.hasTriggerButton
+      && popoverProbe.hasPopoverSurface
+      && popoverProbe.checkboxCount >= 2
+      && popoverProbe.surfaceLabelledby === 'popover-surface-preview-title'
+      && popoverProbe.surfaceLabelText.includes('显示选项')
+      && popoverProbe.surfaceAriaLabel === ''
+      && popoverProbe.initialHidden === true
+      && popoverProbe.initialExpanded === 'false'
+      && popoverProbe.open
+      && popoverProbe.expandedAfterOpen === 'true'
+      && popoverProbe.hiddenAfterOpen === false
+      && popoverProbe.openAnimation === 'uzu-menu-in'
+      && popoverProbe.openText.includes('显示选项')
+      && popoverProbe.closedAfterEscape,
+      `popover preview should present a real public triggered popover: ${JSON.stringify(popoverProbe)}`
+    );
+    assert(
+      popoverProbe.visibleLang === 'zh'
+      && popoverProbe.visibleCode.includes('视图设置')
+      && popoverProbe.visibleCode.includes('显示选项')
+      && popoverProbe.visibleCode.includes('data-uzu-popover')
+      && popoverProbe.visibleCode.includes('data-uzu-popover-trigger')
+      && popoverProbe.visibleCode.includes('data-uzu-popover-content')
+      && popoverProbe.visibleCode.includes('hidden')
+      && popoverProbe.visibleCode.includes('class="uzu-popover uzu-stack"')
+      && popoverProbe.visibleCode.includes('class="uzu-check-row"')
+      && !popoverProbe.visibleCode.includes('View Settings')
+      && !popoverProbe.visibleCode.includes('Display Options')
+      && !popoverProbe.visibleCode.includes('Show Guides'),
+      `Chinese popover code tab should show localized triggered popover code: ${JSON.stringify(popoverProbe)}`
+    );
+
+    await openPanel(cdp, 'component-slider');
+    const sliderPanel = await waitForPanel(cdp, 'component-slider', (state) => state.visiblePanel === 'component-slider');
+    assertPanelState('component-slider', sliderPanel);
+    const sliderProbe = await evaluate(cdp, 'component stepped slider preview and localized code', `(() => {
+      const panel = document.querySelector('#component-slider');
+      const preview = panel?.querySelector('#demo-slider-preview');
+      const continuous = preview?.querySelector('#density-slider.uzu-slider');
+      const stepped = preview?.querySelector('#priority-slider.uzu-slider-stepped[data-uzu-slider-stepped]');
+      const codeTab = panel?.querySelector('[data-uzu-tab-target="#demo-slider-code"]');
+      const codePanel = panel?.querySelector('#demo-slider-code');
+      if (!panel || !preview || !continuous || !stepped || !codeTab || !codePanel) throw new Error('Missing slider preview controls');
+      const steppedStyle = getComputedStyle(stepped);
+      codeTab.click();
+      const visiblePre = Array.from(codePanel.querySelectorAll('pre')).find((pre) =>
+        !pre.hidden
+        && !pre.hasAttribute('data-uzu-language-hidden')
+        && getComputedStyle(pre).display !== 'none'
+      );
+      return {
+        continuousType: continuous.getAttribute('type') || '',
+        steppedType: stepped.getAttribute('type') || '',
+        steppedStep: stepped.getAttribute('step') || '',
+        steppedValue: stepped.value,
+        continuousAriaValueText: continuous.getAttribute('aria-valuetext') || '',
+        steppedAriaValueText: stepped.getAttribute('aria-valuetext') || '',
+        stepCount: steppedStyle.getPropertyValue('--uzu-slider-step-count').trim(),
+        stepTicks: steppedStyle.getPropertyValue('--uzu-slider-step-ticks').trim(),
+        trackHeight: steppedStyle.getPropertyValue('--uzu-slider-track-height').trim(),
+        thumbSize: steppedStyle.getPropertyValue('--uzu-slider-thumb-size').trim(),
+        visibleLang: visiblePre?.getAttribute('data-lang') || '',
+        visibleCode: visiblePre?.textContent || ''
+      };
+    })()`);
+    assert(
+      sliderProbe.continuousType === 'range'
+      && sliderProbe.steppedType === 'range'
+      && sliderProbe.steppedStep === '1'
+      && sliderProbe.steppedValue === '4'
+      && sliderProbe.continuousAriaValueText === ''
+      && sliderProbe.steppedAriaValueText === ''
+      && sliderProbe.stepCount === '6'
+      && sliderProbe.stepTicks.includes('radial-gradient')
+      && sliderProbe.trackHeight === '10px'
+      && sliderProbe.thumbSize === '16px',
+      `stepped slider preview should use the public finite range contract: ${JSON.stringify(sliderProbe)}`
+    );
+    assert(
+      sliderProbe.visibleLang === 'zh'
+      && sliderProbe.visibleCode.includes('优先级')
+      && sliderProbe.visibleCode.includes('class="uzu-slider uzu-slider-stepped"')
+      && sliderProbe.visibleCode.includes('data-uzu-slider-stepped')
+      && !sliderProbe.visibleCode.includes('aria-valuetext')
+      && !sliderProbe.visibleCode.includes('Priority'),
+      `Chinese slider code tab should show localized stepped slider code: ${JSON.stringify(sliderProbe)}`
+    );
+    for (const snippet of [
+      '.uzu-slider-stepped',
+      '[data-uzu-slider-stepped]',
+      '--uzu-slider-step-ticks'
+    ]) {
+      assert(vendorCss.includes(snippet), `vendor Usuzumi CSS should include stepped slider support: ${snippet}`);
+    }
+
+    await openPanel(cdp, 'component-input-group');
+    const inputGroupPanel = await waitForPanel(cdp, 'component-input-group', (state) => state.visiblePanel === 'component-input-group');
+    assertPanelState('component-input-group', inputGroupPanel);
+    const inputGroupProbe = await evaluate(cdp, 'component input group selectable suffix', `(async () => {
+      const panel = document.querySelector('#component-input-group');
+      const preview = panel?.querySelector('#demo-input-group-preview');
+      const group = preview?.querySelector('.uzu-input-group');
+      const input = group?.querySelector('.uzu-input');
+      const action = group?.querySelector('.uzu-input-action');
+      const select = group?.querySelector('[data-uzu-select]');
+      const trigger = select?.querySelector('[data-uzu-select-trigger]');
+      const menu = select?.querySelector('.uzu-select-menu');
+      const eur = select?.querySelector('[data-value="eur"]');
+      if (!panel || !preview || !group || !input || !action || !select || !trigger || !menu || !eur) throw new Error('Missing input group selectable suffix');
+      const baseBorder = getComputedStyle(group).borderTopColor;
+      const focusVisible = (target) => {
+        try {
+          target.focus({ focusVisible: true });
+        } catch (_) {
+          target.focus();
+        }
+      };
+      const readAttachedFocus = async (target, surface) => {
+        focusVisible(target);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        const surfaceStyle = getComputedStyle(surface);
+        const targetStyle = getComputedStyle(target);
+        const result = {
+          active: document.activeElement === target,
+          border: surfaceStyle.borderTopColor,
+          shadow: surfaceStyle.boxShadow,
+          targetShadow: targetStyle.boxShadow,
+          outlineStyle: targetStyle.outlineStyle,
+          outlineWidth: targetStyle.outlineWidth,
+          outlineOffset: targetStyle.outlineOffset
+        };
+        target.blur();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        return result;
+      };
+      const triggerFocus = await readAttachedFocus(trigger, group);
+      const actionFocus = await readAttachedFocus(action, group);
+      input.focus();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      const inputFocus = {
+        active: document.activeElement === input,
+        border: getComputedStyle(group).borderTopColor,
+        shellShadow: getComputedStyle(group).boxShadow,
+        inputShadow: getComputedStyle(input).boxShadow
+      };
+      input.blur();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      const before = {
+        staticUsdAddon: Boolean(Array.from(group.querySelectorAll('.uzu-input-addon')).find((addon) => addon.textContent.trim() === 'USD')),
+        selectedValue: select.dataset.uzuSelectValue || '',
+        label: trigger.textContent.trim(),
+        baseBorder,
+        triggerFocus,
+        actionFocus,
+        inputFocus,
+        triggerBorderWidth: getComputedStyle(trigger).borderTopWidth,
+        triggerBackground: getComputedStyle(trigger).backgroundColor
+      };
+      trigger.click();
+      await new Promise((resolve) => setTimeout(resolve, 80));
+      const groupRect = group.getBoundingClientRect();
+      const menuRect = menu.getBoundingClientRect();
+      const afterOpen = {
+        menuDisplay: getComputedStyle(menu).display,
+        openAnimation: getComputedStyle(menu).animationName,
+        expanded: trigger.getAttribute('aria-expanded'),
+        menuEscapesGroup: menuRect.bottom > groupRect.bottom + 2
+      };
+      eur.click();
+      await new Promise((resolve) => setTimeout(resolve, 80));
+      const afterChoose = {
+        selectedValue: select.dataset.uzuSelectValue || '',
+        label: trigger.textContent.trim(),
+        expanded: trigger.getAttribute('aria-expanded')
+      };
+      return { before, afterOpen, afterChoose };
+    })()`);
+    assert(
+      !inputGroupProbe.before.staticUsdAddon
+      && inputGroupProbe.before.selectedValue === 'usd'
+      && inputGroupProbe.before.label === 'USD'
+      && inputGroupProbe.before.triggerFocus.active
+      && inputGroupProbe.before.triggerFocus.border === inputGroupProbe.before.baseBorder
+      && inputGroupProbe.before.triggerFocus.shadow === 'none'
+      && inputGroupProbe.before.triggerFocus.targetShadow === 'none'
+      && inputGroupProbe.before.triggerFocus.outlineStyle === 'solid'
+      && Number.parseFloat(inputGroupProbe.before.triggerFocus.outlineWidth) >= 1
+      && inputGroupProbe.before.actionFocus.active
+      && inputGroupProbe.before.actionFocus.border === inputGroupProbe.before.baseBorder
+      && inputGroupProbe.before.actionFocus.shadow === 'none'
+      && inputGroupProbe.before.actionFocus.targetShadow === 'none'
+      && inputGroupProbe.before.actionFocus.outlineStyle === 'solid'
+      && Number.parseFloat(inputGroupProbe.before.actionFocus.outlineWidth) >= 1
+      && inputGroupProbe.before.inputFocus.active
+      && inputGroupProbe.before.inputFocus.border !== inputGroupProbe.before.baseBorder
+      && inputGroupProbe.before.inputFocus.shellShadow === 'none'
+      && inputGroupProbe.before.inputFocus.inputShadow === 'none'
+      && inputGroupProbe.before.triggerBorderWidth === '0px'
+      && inputGroupProbe.before.triggerBackground,
+      `input group suffix should start as an attached selectable control and only the real input should trigger the outer focus border: ${JSON.stringify(inputGroupProbe)}`
+    );
+    assert(
+      inputGroupProbe.afterOpen.menuDisplay === 'grid'
+      && inputGroupProbe.afterOpen.openAnimation === 'uzu-menu-in'
+      && inputGroupProbe.afterOpen.expanded === 'true'
+      && inputGroupProbe.afterOpen.menuEscapesGroup,
+      `input group suffix select should open without being clipped by the group shell: ${JSON.stringify(inputGroupProbe)}`
+    );
+    assert(
+      inputGroupProbe.afterChoose.selectedValue === 'eur'
+      && inputGroupProbe.afterChoose.label === 'EUR'
+      && inputGroupProbe.afterChoose.expanded === 'false',
+      `input group suffix select should choose and sync currency: ${JSON.stringify(inputGroupProbe)}`
+    );
+
+    await openPanel(cdp, 'component-stepper');
+    const stepperPanel = await waitForPanel(cdp, 'component-stepper', (state) => state.visiblePanel === 'component-stepper');
+    assertPanelState('component-stepper', stepperPanel);
+    const stepperProbe = await evaluate(cdp, 'component stepper edit focus boundary', `(async () => {
+      const panel = document.querySelector('#component-stepper');
+      const stepper = panel?.querySelector('#demo-stepper-preview .uzu-stepper');
+      const input = stepper?.querySelector('.uzu-stepper-input');
+      const increment = stepper?.querySelector('[data-uzu-stepper-increment]');
+      if (!panel || !stepper || !input || !increment) throw new Error('Missing stepper preview controls');
+      const baseBorder = getComputedStyle(stepper).borderTopColor;
+      const focusVisible = (target) => {
+        try {
+          target.focus({ focusVisible: true });
+        } catch (_) {
+          target.focus();
+        }
+      };
+      focusVisible(increment);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      const stepperStyle = getComputedStyle(stepper);
+      const incrementStyle = getComputedStyle(increment);
+      const buttonFocus = {
+        active: document.activeElement === increment,
+        border: stepperStyle.borderTopColor,
+        shadow: stepperStyle.boxShadow,
+        targetShadow: incrementStyle.boxShadow,
+        outlineStyle: incrementStyle.outlineStyle,
+        outlineWidth: incrementStyle.outlineWidth,
+        outlineOffset: incrementStyle.outlineOffset
+      };
+      increment.blur();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      input.focus();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      const inputFocus = {
+        active: document.activeElement === input,
+        border: getComputedStyle(stepper).borderTopColor,
+        shellShadow: getComputedStyle(stepper).boxShadow,
+        inputShadow: getComputedStyle(input).boxShadow
+      };
+      input.blur();
+      return { baseBorder, buttonFocus, inputFocus };
+    })()`);
+    assert(
+      stepperProbe.buttonFocus.active
+      && stepperProbe.buttonFocus.border === stepperProbe.baseBorder
+      && stepperProbe.buttonFocus.shadow === 'none'
+      && stepperProbe.buttonFocus.targetShadow === 'none'
+      && stepperProbe.buttonFocus.outlineStyle === 'solid'
+      && Number.parseFloat(stepperProbe.buttonFocus.outlineWidth) >= 1
+      && stepperProbe.inputFocus.active
+      && stepperProbe.inputFocus.border !== stepperProbe.baseBorder
+      && stepperProbe.inputFocus.shellShadow === 'none'
+      && stepperProbe.inputFocus.inputShadow === 'none',
+      `stepper preview should only strengthen the outer edit border when the number input is focused: ${JSON.stringify(stepperProbe)}`
+    );
+
+    await openPanel(cdp, 'component-search');
+    const searchPanel = await waitForPanel(cdp, 'component-search', (state) => state.visiblePanel === 'component-search');
+    assertPanelState('component-search', searchPanel);
+    const searchProbe = await evaluate(cdp, 'component search localized code and clear icon', `(() => {
+      const panel = document.querySelector('#component-search');
+      const codeTab = panel?.querySelector('[data-uzu-tab-target="#demo-search-code"]');
+      const codePanel = panel?.querySelector('#demo-search-code');
+      const input = panel?.querySelector('#demo-search-preview .uzu-search-input');
+      const clear = panel?.querySelector('#demo-search-preview [data-uzu-search-clear]');
+      if (!panel || !codeTab || !codePanel || !input || !clear) throw new Error('Missing search preview controls');
+      codeTab.click();
+      const visiblePre = Array.from(codePanel.querySelectorAll('pre')).find((pre) =>
+        !pre.hidden
+        && !pre.hasAttribute('data-uzu-language-hidden')
+        && getComputedStyle(pre).display !== 'none'
+      );
+      const clearStyle = getComputedStyle(clear);
+      return {
+        visibleLang: visiblePre?.getAttribute('data-lang') || '',
+        visibleCode: visiblePre?.textContent || '',
+        clearHasSvg: Boolean(clear.querySelector('svg')),
+        clearText: clear.textContent.trim(),
+        clearWidth: clearStyle.width,
+        clearHeight: clearStyle.height,
+        clearBorderWidth: clearStyle.borderTopWidth,
+        clearBorderRadius: clearStyle.borderTopLeftRadius,
+        clearBackground: clearStyle.backgroundColor,
+        clearBoxShadow: clearStyle.boxShadow,
+        clearBackdropFilter: clearStyle.backdropFilter || clearStyle.webkitBackdropFilter || ''
+      };
+    })()`);
+    assert(
+      searchProbe.visibleLang === 'zh'
+      && searchProbe.visibleCode.includes('value="组件"')
+      && searchProbe.visibleCode.includes('aria-label="清空搜索"')
+      && !searchProbe.visibleCode.includes('value="button"'),
+      `Chinese search code tab should show localized code: ${JSON.stringify(searchProbe)}`
+    );
+    assert(searchProbe.clearHasSvg && searchProbe.clearText === '', `search clear button should be icon-only: ${JSON.stringify(searchProbe)}`);
+    assert(
+      searchProbe.clearWidth === '32px'
+      && searchProbe.clearHeight === '32px'
+      && searchProbe.clearBorderWidth === '0px'
+      && Number.parseFloat(searchProbe.clearBorderRadius) <= 12
+      && (searchProbe.clearBackground === 'rgba(0, 0, 0, 0)' || searchProbe.clearBackground === 'transparent')
+      && searchProbe.clearBoxShadow === 'none'
+      && ['none', ''].includes(searchProbe.clearBackdropFilter),
+      `search clear button should render as a quiet embedded input action: ${JSON.stringify(searchProbe)}`
+    );
+    for (const snippet of [
+      '.uzu-search-input::-webkit-search-cancel-button',
+      'pointer-events: none',
+      '-webkit-appearance: none'
+    ]) {
+      assert(vendorCss.includes(snippet), `vendor Usuzumi CSS should hide native search controls: ${snippet}`);
+    }
+
+    await openPanel(cdp, 'component-password');
+    const passwordPanel = await waitForPanel(cdp, 'component-password', (state) => state.visiblePanel === 'component-password');
+    assertPanelState('component-password', passwordPanel);
+    const passwordProbe = await evaluate(cdp, 'component password embedded toggle', `(() => {
+      const panel = document.querySelector('#component-password');
+      const toggle = panel?.querySelector('#demo-password-preview [data-uzu-password-toggle]');
+      if (!panel || !toggle) throw new Error('Missing password toggle');
+      const style = getComputedStyle(toggle);
+      return {
+        hasSvg: Boolean(toggle.querySelector('svg')),
+        text: toggle.textContent.trim(),
+        width: style.width,
+        height: style.height,
+        borderWidth: style.borderTopWidth,
+        borderRadius: style.borderTopLeftRadius,
+        background: style.backgroundColor,
+        boxShadow: style.boxShadow,
+        backdropFilter: style.backdropFilter || style.webkitBackdropFilter || ''
+      };
+    })()`);
+    assert(
+      passwordProbe.hasSvg
+      && passwordProbe.text === ''
+      && passwordProbe.width === '32px'
+      && passwordProbe.height === '32px'
+      && passwordProbe.borderWidth === '0px'
+      && Number.parseFloat(passwordProbe.borderRadius) <= 12
+      && (passwordProbe.background === 'rgba(0, 0, 0, 0)' || passwordProbe.background === 'transparent')
+      && passwordProbe.boxShadow === 'none'
+      && ['none', ''].includes(passwordProbe.backdropFilter),
+      `password toggle should render as a quiet embedded icon action: ${JSON.stringify(passwordProbe)}`
+    );
+
+    await openPanel(cdp, 'component-toast');
+    const toastPanel = await waitForPanel(cdp, 'component-toast', (state) => state.visiblePanel === 'component-toast');
+    assertPanelState('component-toast', toastPanel);
+    const toastProbe = await evaluate(cdp, 'component toast trigger and localized code', `(async () => {
+      const panel = document.querySelector('#component-toast');
+      const preview = panel?.querySelector('#demo-toast-preview');
+      const trigger = preview?.querySelector('[data-uzu-toast-trigger]');
+      const stack = preview?.querySelector('#demo-toast-stack');
+      const codeTab = panel?.querySelector('[data-uzu-tab-target="#demo-toast-code"]');
+      const codePanel = panel?.querySelector('#demo-toast-code');
+      if (!panel || !preview || !trigger || !stack || !codeTab || !codePanel) throw new Error('Missing toast preview controls');
+      const isHidden = (element) => element.hasAttribute('data-uzu-language-hidden') || getComputedStyle(element).display === 'none';
+      const initialCount = stack.querySelectorAll('[data-uzu-toast]').length;
+      trigger.click();
+      await new Promise((resolve) => setTimeout(resolve, 80));
+      const toast = stack.querySelector('[data-uzu-toast]');
+      const visibleTitle = Array.from(toast?.querySelectorAll('h3 [data-lang]') || []).find((element) => !isHidden(element));
+      const visibleClose = Array.from(toast?.querySelectorAll('[data-uzu-toast-close]') || []).find((element) => !isHidden(element));
+      const afterOpenCount = stack.querySelectorAll('[data-uzu-toast]').length;
+      const afterOpen = {
+        initialCount,
+        afterOpenCount,
+        visibleTitle: visibleTitle?.textContent.trim() || '',
+        visibleCloseLabel: visibleClose?.getAttribute('aria-label') || '',
+        visibleCloseHasSvg: Boolean(visibleClose?.querySelector('svg')),
+        role: toast?.getAttribute('role') || '',
+        live: toast?.getAttribute('aria-live') || ''
+      };
+      visibleClose?.click();
+      await new Promise((resolve) => setTimeout(resolve, 260));
+      codeTab.click();
+      const visiblePre = Array.from(codePanel.querySelectorAll('pre')).find((pre) =>
+        !pre.hidden
+        && !pre.hasAttribute('data-uzu-language-hidden')
+        && getComputedStyle(pre).display !== 'none'
+      );
+      return {
+        ...afterOpen,
+        removedAfterClose: !stack.querySelector('[data-uzu-toast]'),
+        visibleCodeLang: visiblePre?.getAttribute('data-lang') || '',
+        visibleCode: visiblePre?.textContent || ''
+      };
+    })()`);
+    assert(
+      toastProbe.initialCount === 0
+      && toastProbe.afterOpenCount === 1
+      && toastProbe.visibleTitle === '已保存'
+      && toastProbe.visibleCloseLabel === '关闭 Toast'
+      && toastProbe.visibleCloseHasSvg
+      && toastProbe.role === 'status'
+      && toastProbe.live === 'polite'
+      && toastProbe.removedAfterClose,
+      `toast preview should create and close a localized toast only after interaction: ${JSON.stringify(toastProbe)}`
+    );
+    assert(
+      toastProbe.visibleCodeLang === 'zh'
+      && toastProbe.visibleCode.includes('显示 Toast')
+      && toastProbe.visibleCode.includes('已保存')
+      && !toastProbe.visibleCode.includes('Show Toast'),
+      `Chinese toast code tab should show localized trigger code: ${JSON.stringify(toastProbe)}`
+    );
+
     await openPanel(cdp, 'component-typography');
     const typographyPanel = await panelState(cdp, 'component-typography');
     assertPanelState('component-typography', typographyPanel);
+    const typographyLayout = await evaluate(cdp, 'typography preview layout', `(() => {
+      const preview = document.querySelector('#demo-typography-preview');
+      const surface = preview?.querySelector('.uzu-card > .uzu-surface-soft');
+      return {
+        previewGridCount: preview?.querySelectorAll('.uzu-grid').length ?? -1,
+        surfaceSectionCount: surface?.querySelectorAll(':scope > section').length ?? 0,
+        surfaceSeparatorCount: surface?.querySelectorAll(':scope > .uzu-separator').length ?? 0
+      };
+    })()`);
+    assert(
+      typographyLayout.previewGridCount === 0
+        && typographyLayout.surfaceSectionCount >= 6
+        && typographyLayout.surfaceSeparatorCount >= 5,
+      `typography preview should use one vertical specimen surface: ${JSON.stringify(typographyLayout)}`
+    );
     const typographySpecimens = await evaluate(cdp, 'typography specimen containment', `(() => {
       const makeTextRect = (element) => {
         const range = document.createRange();
@@ -417,16 +1273,27 @@ async function runBrowserSmoke() {
         range.detach?.();
         return rect;
       };
-      return Array.from(document.querySelectorAll('#component-typography .uzu-scroll-area > :is(.uzu-signature, .uzu-hero-title, .uzu-page-title, .uzu-section-title)'))
-        .map((element) => {
-          const preview = element.closest('.uzu-scroll-area');
+      const specimens = [
+        { role: 'uzu-signature', selector: '#demo-typography-preview .uzu-signature' },
+        { role: 'uzu-hero-title', selector: '#demo-typography-preview .uzu-hero-title' },
+        { role: 'uzu-page-title', selector: '#demo-typography-preview .uzu-page-title' },
+        { role: 'uzu-section-title', selector: '#demo-typography-preview .uzu-section-title' }
+      ];
+      return specimens
+        .map((specimen) => {
+          const element = document.querySelector(specimen.selector);
+          if (!element) return { label: specimen.role, missing: true };
+          const preview = element.closest('.uzu-surface-soft');
           const card = element.closest('.uzu-card');
+          if (!preview || !card) return { label: specimen.role, missingSurface: !preview, missingCard: !card };
           const previewStyle = getComputedStyle(preview);
           const cardRect = card.getBoundingClientRect();
           const previewRect = preview.getBoundingClientRect();
           const textRect = makeTextRect(element);
           return {
-            label: element.className,
+            label: specimen.role,
+            className: element.className,
+            isScrollArea: preview.classList.contains('uzu-scroll-area'),
             textLeft: textRect.left,
             textRight: textRect.right,
             previewLeft: previewRect.left,
@@ -446,6 +1313,7 @@ async function runBrowserSmoke() {
     })()`);
     assert(typographySpecimens.length >= 4, `typography specimen containment did not inspect all display roles: ${JSON.stringify(typographySpecimens)}`);
     for (const specimen of typographySpecimens) {
+      assert(!specimen.missing && !specimen.missingSurface && !specimen.missingCard, `typography specimen is missing its public preview structure: ${JSON.stringify(specimen)}`);
       assert(
         specimen.previewLeft >= specimen.cardLeft - 1
         && specimen.previewRight <= specimen.cardRight + 1
@@ -458,14 +1326,10 @@ async function runBrowserSmoke() {
         `typography specimen text escapes its public preview surface horizontally: ${JSON.stringify(specimen)}`
       );
       assert(
-        specimen.previewOverflowY === 'auto' && Number.parseFloat(specimen.previewMaxHeight) > 0,
-        `typography specimen preview should use a bounded public scroll area: ${JSON.stringify(specimen)}`
+        !specimen.isScrollArea && specimen.previewOverflowY !== 'auto' && specimen.previewMaxHeight === 'none',
+        `typography specimen preview should not use a fixed-height scroll container: ${JSON.stringify(specimen)}`
       );
     }
-    assert(
-      typographySpecimens.some((specimen) => specimen.label.includes('uzu-signature') && specimen.previewScrollHeight > specimen.previewClientHeight),
-      `signature specimen should be visibly bounded by its public scroll area: ${JSON.stringify(typographySpecimens)}`
-    );
 
     await openPanel(cdp, 'component-markdown-editor');
     const markdown = await waitForPanel(cdp, 'component-markdown-editor', (state) => state.markdownRendered);

@@ -24,7 +24,17 @@
 </head>
 <body class="uzu-app">
   <div class="uzu-floating-controls" aria-label="Page settings">
-    <button class="uzu-icon-button uzu-language-toggle" type="button" data-uzu-language-toggle data-uzu-language-key="app-introduction-language" aria-label="Switch language">EN</button>
+    <span class="uzu-language-select" data-uzu-language-select data-uzu-language-key="app-introduction-language">
+      <button class="uzu-icon-button uzu-language-trigger" type="button" data-uzu-language-trigger aria-label="Language">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none">
+          <path d="M4 7h7M7.5 4v3M10.5 7c-.7 3.2-2.6 5.5-5.5 7M6.2 9.6c1 1.8 2.4 3.2 4.2 4.2M13 20l4-10 4 10M14.3 17h5.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <span class="uzu-language-menu" data-uzu-language-menu>
+        <button class="uzu-language-option is-selected" type="button" data-uzu-language-option data-uzu-language-value="zh" data-uzu-language-html-lang="zh-CN">中文</button>
+        <button class="uzu-language-option" type="button" data-uzu-language-option data-uzu-language-value="en" data-uzu-language-html-lang="en">English</button>
+      </span>
+    </span>
     <button class="uzu-icon-button uzu-theme-toggle" type="button" data-uzu-theme-toggle aria-label="Switch theme">
       <svg class="uzu-icon-moon" viewBox="0 0 24 24" aria-hidden="true" fill="none">
         <path d="M20.3 15.1A7.6 7.6 0 0 1 8.9 3.7 8.9 8.9 0 1 0 20.3 15.1Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
@@ -40,21 +50,21 @@
     <header class="uzu-topbar">
       <a class="uzu-brand-link" href="../index.html">Usuzumi</a>
       <nav class="uzu-nav" aria-label="Page navigation">
-        <a href="#features"><span data-lang="zh">功能</span><span data-lang="en">Features</span></a>
-        <a href="#screens"><span data-lang="zh">界面</span><span data-lang="en">Screens</span></a>
+        <a href="#features"><span data-lang="zh">功能</span><span data-lang="en" data-uzu-language-hidden>Features</span></a>
+        <a href="#screens"><span data-lang="zh">界面</span><span data-lang="en" data-uzu-language-hidden>Screens</span></a>
       </nav>
     </header>
 
     <section class="uzu-hero-split">
       <div class="uzu-stack uzu-gap-4">
         <div class="uzu-flex uzu-wrap uzu-gap-2">
-          <span class="uzu-badge" data-lang="zh">Web / Mobile App</span><span class="uzu-badge" data-lang="en">Web / mobile app</span>
+          <span class="uzu-badge" data-lang="zh">Web / Mobile App</span><span class="uzu-badge" data-lang="en" data-uzu-language-hidden>Web / mobile app</span>
           <span class="uzu-badge">2026</span>
         </div>
         <h1 class="uzu-hero-title">Product</h1>
         <p class="uzu-body-large uzu-mt-block">
           <span data-lang="zh">用一句清晰的承诺介绍应用价值，把主要行动、界面预览和核心卖点放进同一个安静节奏里。</span>
-          <span data-lang="en">Introduce an app with a clear promise, focused actions, interface previews, and a calm feature rhythm.</span>
+          <span data-lang="en" data-uzu-language-hidden>Introduce an app with a clear promise, focused actions, interface previews, and a calm feature rhythm.</span>
         </p>
         <div class="uzu-flex uzu-wrap uzu-gap-2 uzu-mt-block" aria-label="Download options">
           <button class="uzu-button uzu-button-primary" type="button">
@@ -67,7 +77,7 @@
           </button>
           <button class="uzu-button" type="button">
             <svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 17.5v1.2c0 .8.6 1.3 1.4 1.3h11.2c.8 0 1.4-.5 1.4-1.3v-1.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span data-lang="zh">直接下载</span><span data-lang="en">Download</span>
+            <span data-lang="zh">直接下载</span><span data-lang="en" data-uzu-language-hidden>Download</span>
           </button>
         </div>
       </div>
@@ -110,12 +120,12 @@
             <article class="uzu-stat">
               <p class="uzu-stat-label">Signal</p>
               <p class="uzu-stat-value">84%</p>
-              <p class="uzu-stat-note"><span data-lang="zh">核心流程完成率</span><span data-lang="en">core flow completion</span></p>
+              <p class="uzu-stat-note"><span data-lang="zh">核心流程完成率</span><span data-lang="en" data-uzu-language-hidden>core flow completion</span></p>
             </article>
             <article class="uzu-stat">
               <p class="uzu-stat-label">Trust</p>
               <p class="uzu-stat-value">4.8</p>
-              <p class="uzu-stat-note"><span data-lang="zh">用户评分示例</span><span data-lang="en">sample user rating</span></p>
+              <p class="uzu-stat-note"><span data-lang="zh">用户评分示例</span><span data-lang="en" data-uzu-language-hidden>sample user rating</span></p>
             </article>
           </div>
         </div>
@@ -124,35 +134,35 @@
 
     <section class="uzu-section" id="features">
       <div class="uzu-section-head">
-        <p class="uzu-section-label"><span data-lang="zh">功能</span><span data-lang="en">Features</span></p>
-        <h2 class="uzu-section-title"><span data-lang="zh">从承诺到行动，页面只保留用户需要判断的内容。</span><span data-lang="en">From promise to action, the page keeps only what users need to decide.</span></h2>
-        <p class="uzu-body-large"><span data-lang="zh">这个模板适合展示工具类、效率类或内容型应用：先说明价值，再展示界面，最后给出可信的下一步。</span><span data-lang="en">This template suits tools, productivity apps, and content products: explain value, show the interface, then offer a trustworthy next step.</span></p>
+        <p class="uzu-section-label"><span data-lang="zh">功能</span><span data-lang="en" data-uzu-language-hidden>Features</span></p>
+        <h2 class="uzu-section-title"><span data-lang="zh">从承诺到行动，页面只保留用户需要判断的内容。</span><span data-lang="en" data-uzu-language-hidden>From promise to action, the page keeps only what users need to decide.</span></h2>
+        <p class="uzu-body-large"><span data-lang="zh">这个模板适合展示工具类、效率类或内容型应用：先说明价值，再展示界面，最后给出可信的下一步。</span><span data-lang="en" data-uzu-language-hidden>This template suits tools, productivity apps, and content products: explain value, show the interface, then offer a trustworthy next step.</span></p>
       </div>
       <div class="uzu-stack uzu-gap-4">
         <article class="uzu-card uzu-grid uzu-grid-2">
           <span class="uzu-badge">01</span>
-          <div class="uzu-title-pair"><h3><span data-lang="zh">清晰承诺</span><span data-lang="en">Clear promise</span></h3><p><span data-lang="zh">用少量文字说明产品解决什么问题，不把首屏变成营销噪音。</span><span data-lang="en">Explain the product value without turning the first screen into marketing noise.</span></p></div>
+          <div class="uzu-title-pair"><h3><span data-lang="zh">清晰承诺</span><span data-lang="en" data-uzu-language-hidden>Clear promise</span></h3><p><span data-lang="zh">用少量文字说明产品解决什么问题，不把首屏变成营销噪音。</span><span data-lang="en" data-uzu-language-hidden>Explain the product value without turning the first screen into marketing noise.</span></p></div>
         </article>
         <article class="uzu-card uzu-grid uzu-grid-2">
           <span class="uzu-badge">02</span>
-          <div class="uzu-title-pair"><h3><span data-lang="zh">核心流程</span><span data-lang="en">Core flow</span></h3><p><span data-lang="zh">用界面预览表现主要任务，让访问者快速理解应用如何工作。</span><span data-lang="en">Use interface previews to show the primary task and make the product easy to understand.</span></p></div>
+          <div class="uzu-title-pair"><h3><span data-lang="zh">核心流程</span><span data-lang="en" data-uzu-language-hidden>Core flow</span></h3><p><span data-lang="zh">用界面预览表现主要任务，让访问者快速理解应用如何工作。</span><span data-lang="en" data-uzu-language-hidden>Use interface previews to show the primary task and make the product easy to understand.</span></p></div>
         </article>
         <article class="uzu-card uzu-grid uzu-grid-2">
           <span class="uzu-badge">03</span>
-          <div class="uzu-title-pair"><h3><span data-lang="zh">可信行动</span><span data-lang="en">Trusted actions</span></h3><p><span data-lang="zh">下载、源码、文档或试用入口保持明确，不用过多按钮争夺注意力。</span><span data-lang="en">Keep download, source, docs, or trial actions clear without letting too many buttons compete.</span></p></div>
+          <div class="uzu-title-pair"><h3><span data-lang="zh">可信行动</span><span data-lang="en" data-uzu-language-hidden>Trusted actions</span></h3><p><span data-lang="zh">下载、源码、文档或试用入口保持明确，不用过多按钮争夺注意力。</span><span data-lang="en" data-uzu-language-hidden>Keep download, source, docs, or trial actions clear without letting too many buttons compete.</span></p></div>
         </article>
       </div>
     </section>
 
     <section class="uzu-section" id="screens">
       <div class="uzu-section-head">
-        <p class="uzu-section-label"><span data-lang="zh">界面</span><span data-lang="en">Screens</span></p>
-        <h2 class="uzu-section-title"><span data-lang="zh">三个界面卡片，展示从入口到结果的完整印象。</span><span data-lang="en">Three screen cards present a complete impression from entry to outcome.</span></h2>
+        <p class="uzu-section-label"><span data-lang="zh">界面</span><span data-lang="en" data-uzu-language-hidden>Screens</span></p>
+        <h2 class="uzu-section-title"><span data-lang="zh">三个界面卡片，展示从入口到结果的完整印象。</span><span data-lang="en" data-uzu-language-hidden>Three screen cards present a complete impression from entry to outcome.</span></h2>
       </div>
       <div class="uzu-grid uzu-grid-3">
-        <article class="uzu-card uzu-stack uzu-gap-4"><div class="uzu-aspect uzu-surface-soft uzu-center"><span class="uzu-badge">01</span></div><div class="uzu-title-pair"><h3>Overview</h3><p><span data-lang="zh">产品入口、状态摘要和主要行动。</span><span data-lang="en">Product entry, status summary, and primary action.</span></p></div></article>
-        <article class="uzu-card uzu-stack uzu-gap-4"><div class="uzu-aspect uzu-surface-soft uzu-center"><span class="uzu-badge">02</span></div><div class="uzu-title-pair"><h3>Workflow</h3><p><span data-lang="zh">核心流程、步骤关系和输入区域。</span><span data-lang="en">Core flow, step relationships, and input areas.</span></p></div></article>
-        <article class="uzu-card uzu-stack uzu-gap-4"><div class="uzu-aspect uzu-surface-soft uzu-center"><span class="uzu-badge">03</span></div><div class="uzu-title-pair"><h3>Result</h3><p><span data-lang="zh">完成状态、导出结果和后续操作。</span><span data-lang="en">Completion state, output, and follow-up actions.</span></p></div></article>
+        <article class="uzu-card uzu-stack uzu-gap-4"><div class="uzu-aspect uzu-surface-soft uzu-center"><span class="uzu-badge">01</span></div><div class="uzu-title-pair"><h3>Overview</h3><p><span data-lang="zh">产品入口、状态摘要和主要行动。</span><span data-lang="en" data-uzu-language-hidden>Product entry, status summary, and primary action.</span></p></div></article>
+        <article class="uzu-card uzu-stack uzu-gap-4"><div class="uzu-aspect uzu-surface-soft uzu-center"><span class="uzu-badge">02</span></div><div class="uzu-title-pair"><h3>Workflow</h3><p><span data-lang="zh">核心流程、步骤关系和输入区域。</span><span data-lang="en" data-uzu-language-hidden>Core flow, step relationships, and input areas.</span></p></div></article>
+        <article class="uzu-card uzu-stack uzu-gap-4"><div class="uzu-aspect uzu-surface-soft uzu-center"><span class="uzu-badge">03</span></div><div class="uzu-title-pair"><h3>Result</h3><p><span data-lang="zh">完成状态、导出结果和后续操作。</span><span data-lang="en" data-uzu-language-hidden>Completion state, output, and follow-up actions.</span></p></div></article>
       </div>
     </section>
 

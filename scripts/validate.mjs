@@ -49,6 +49,18 @@ const componentDocsQualityPatterns = [
   [/aria-valuenow=&quot;true/i, 'docs contain an invalid aria-valuenow example'],
   [/aria-orientation=&quot;true/i, 'docs contain an invalid aria-orientation example']
 ];
+const componentPanelDocsQualityPatterns = [
+  [/Base Interface/i, 'cleaned component panels should use concrete API categories instead of Base Interface'],
+  [/Data \/ ARIA/i, 'cleaned component panels should use concrete API categories instead of Data / ARIA'],
+  [/Wrapper entry that defines layout and state scope\./i, 'cleaned component panels should not use generic wrapper copy'],
+  [/Child structure for content, supporting copy, or actions\./i, 'cleaned component panels should not use generic child-structure copy'],
+  [/Enables or configures the public Usuzumi runtime\./i, 'cleaned component panels should describe the concrete runtime behavior'],
+  [/Listen to connect component changes to application state\./i, 'cleaned component panels should describe the concrete event payload or timing'],
+  [/Expresses current state for styles, tests, and application code\./i, 'cleaned component panels should describe the concrete state contract'],
+  [/aria-sort=&quot;true/i, 'data grid docs should use valid aria-sort values']
+];
+const maxInterfaceExampleLength = 170;
+const maxComponentInterfaceRows = 18;
 const retiredEditorCopyPattern = new RegExp([
   'T' + 'iptap mount',
   'Code' + 'Mirror 6 mount',
@@ -134,6 +146,36 @@ function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function decodeHtmlEntities(value) {
+  return value
+    .replaceAll('&quot;', '"')
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&#10;', '\n')
+    .replaceAll('&amp;', '&');
+}
+
+function stripInlineCode(value) {
+  return value.replace(/<code class="uzu-code">[\s\S]*?<\/code>/g, '');
+}
+
+function stripHtmlTags(value) {
+  return value.replace(/<[^>]+>/g, ' ');
+}
+
+function parseLanguageValues(value) {
+  return String(value || '').split(/[\s,]+/).map((item) => item.trim()).filter(Boolean);
+}
+
+function getComponentInterfaceTable(panelText) {
+  const tables = [...panelText.matchAll(/<div class="uzu-table-wrap">\s*<table class="uzu-table">([\s\S]*?)<\/table>\s*<\/div>/g)];
+  return tables.at(-1)?.[1] || '';
+}
+
+function hasComponentCatalogNotes(panelText) {
+  return /<div class="uzu-card uzu-stack uzu-gap-4">\s*<div class="uzu-title-pair">\s*<h3><span data-lang="zh">(?:组件文档|接口)<\/span><span data-lang="en" data-uzu-language-hidden>(?:Component Docs|Interface)<\/span><\/h3>/i.test(panelText);
+}
+
 function hasHtmlHashTarget(filePath, hash) {
   if (!hash || hash.startsWith(':~:text=')) return true;
   const pattern = new RegExp(`\\b(?:id|name)=["']${escapeRegExp(decodeURIComponent(hash))}["']`, 'i');
@@ -158,6 +200,25 @@ function checkExistingReference(filePath, rawValue, label) {
 function checkHtmlReferences(filePath, text) {
   for (const match of text.matchAll(/\b(?:href|src)=["']([^"']+)["']/gi)) {
     checkExistingReference(filePath, match[1], 'HTML');
+  }
+}
+
+function checkInitialLanguageVisibility(filePath, text) {
+  const htmlTag = text.match(/<html\b[^>]*>/i)?.[0] || '';
+  const initialLanguage = htmlTag.match(/\bdata-language=["']([^"']+)["']/i)?.[1]
+    || htmlTag.match(/\bdata-uzu-lang=["']([^"']+)["']/i)?.[1]
+    || '';
+  if (!initialLanguage) return;
+  for (const match of text.matchAll(/<[^>]*\bdata-lang=["']([^"']+)["'][^>]*>/gi)) {
+    const tag = match[0];
+    const values = parseLanguageValues(match[1]);
+    const hidden = /\bdata-uzu-language-hidden\b/i.test(tag);
+    if (values.length > 0 && values.includes(initialLanguage) && hidden) {
+      report(filePath, `initial ${initialLanguage} language fragment should not be statically hidden: ${tag.slice(0, 120)}`);
+    }
+    if (values.length > 0 && !values.includes(initialLanguage) && !hidden) {
+      report(filePath, `non-initial language fragment needs data-uzu-language-hidden to avoid first-paint language flash: ${tag.slice(0, 120)}`);
+    }
   }
 }
 
@@ -231,6 +292,10 @@ function checkGuardrails(filePath, text) {
   if (/components\/assets\/components\.css/i.test(text)) {
     report(filePath, 'site code should not reference the retired components.css file');
   }
+  const retiredLanguageTogglePattern = new RegExp('data-uzu-language-' + 'toggle|uzu-language-' + 'toggle', 'i');
+  if (retiredLanguageTogglePattern.test(text)) {
+    report(filePath, 'site code should use the public language selector, not the retired language toggle');
+  }
   if (relative.endsWith('.html') && /components\/node_modules\/usuzumi/i.test(text)) {
     report(filePath, 'HTML should load Usuzumi from assets/vendor/usuzumi, not ignored node_modules');
   }
@@ -240,7 +305,23 @@ function checkGuardrails(filePath, text) {
   if (!relative.startsWith('assets/vendor/') && /\.(?:html|css)$/.test(relative) && /::-webkit-scrollbar|\bscrollbar-(?:button|width|color)\b/i.test(text)) {
     report(filePath, 'site pages must not define local scrollbar styles; consume the public Usuzumi scrollbar contract');
   }
+  if (['index.html', 'components.html', 'editor-integration.html'].includes(relative)) {
+    const topbarMatch = text.match(/<header class="uzu-topbar"[\s\S]*?<\/header>/);
+    if (/class="uzu-floating-controls"/.test(text)) {
+      report(filePath, 'site page settings should live inside the public .uzu-topbar-actions slot instead of fixed floating controls');
+    }
+    if (!topbarMatch || !topbarMatch[0].includes('class="uzu-topbar-actions"')) {
+      report(filePath, 'site topbar should expose page settings through the public .uzu-topbar-actions slot');
+    }
+    if (/class="uzu-flex uzu-gap-2"\s+aria-label="Page settings"/.test(text)) {
+      report(filePath, 'site page settings should use .uzu-topbar-actions, not a generic flex row');
+    }
+    if (/components\.html#component-layout-primitives/i.test(topbarMatch?.[0] || '')) {
+      report(filePath, 'site topbar should link to Components directly instead of a duplicate Docs entry');
+    }
+  }
   if (relative === 'components.html') {
+    if (/\?{3,}/.test(text)) report(filePath, 'component page should not contain mojibake placeholder question marks');
     if (retiredComponentPagePattern.test(text)) report(filePath, 'component page should be static consumer markup and must not load component-docs hooks, data files, or page-only classes');
     if (retiredSiteRuntimePattern.test(text)) report(filePath, 'component page should not load site-owned UI runtime scripts');
     if (retiredEditorCopyPattern.test(text)) {
@@ -349,12 +430,8 @@ function checkComponentPage() {
   const panelSet = new Set(panels.map((match) => match[1]));
   const navTargets = [...text.matchAll(/data-uzu-panel-target="#component-([^"]+)"/g)].map((match) => match[1]);
   const navTargetSet = new Set(navTargets);
-  const componentDocHeadings = (text.match(/Component Docs/g) || []).length;
   if (panelSet.size < 60) report(filePath, `component page exposes too few static component panels: ${panelSet.size}`);
   if (navTargetSet.size !== panelSet.size) report(filePath, `component nav targets ${navTargetSet.size} do not match component panels ${panelSet.size}`);
-  if (componentDocHeadings !== panelSet.size) {
-    report(filePath, `component docs headings ${componentDocHeadings} do not match component panels ${panelSet.size}`);
-  }
   const demoTabs = (text.match(/aria-label="Component demo view"/g) || []).length;
   const demoPreviewTargets = (text.match(/data-uzu-tab-target="#demo-[^"]+-preview"/g) || []).length;
   const demoCodeTargets = (text.match(/data-uzu-tab-target="#demo-[^"]+-code"/g) || []).length;
@@ -371,25 +448,77 @@ function checkComponentPage() {
   }
   if (!text.includes('data-uzu-panel-nav')) report(filePath, 'component page should use the public panel navigation runtime');
   if (!text.includes('class="uzu-panel" id="component-colors"')) report(filePath, 'component page should expose an initial public .uzu-panel');
+  const componentNav = text.match(/<nav class="uzu-panel-nav" aria-label="Component list"[\s\S]*?<\/nav>/)?.[0] || '';
+  if (componentNav.includes('uzu-panel-nav-meta')) {
+    report(filePath, 'component nav should not repeat item labels with .uzu-panel-nav-meta');
+  }
   for (const [panelText, id] of panels) {
     for (const [pattern, message] of componentDocsQualityPatterns) {
       if (pattern.test(panelText)) report(filePath, `component panel ${id}: ${message}`);
+    }
+    for (const [pattern, message] of componentPanelDocsQualityPatterns) {
+      if (pattern.test(panelText)) report(filePath, `component panel ${id}: ${message}`);
+    }
+    for (const paragraph of panelText.matchAll(/<p(?:\s[^>]*)?>([\s\S]*?)<\/p>/g)) {
+      const prose = stripHtmlTags(stripInlineCode(paragraph[1]));
+      if (/(?:^|[\s\u3001\uff0c\uff1b\uff1a(])(?:\.uzu-[a-z0-9-]+|data-uzu-[a-z0-9-]+|aria-[a-z0-9-]+|role=|:root)\b/i.test(prose)) {
+        report(filePath, `component panel ${id}: prose should wrap public interfaces in .uzu-code`);
+      }
+    }
+    const componentInterfaceTable = getComponentInterfaceTable(panelText);
+    const componentCodeBlocks = panelText.matchAll(/<pre class="uzu-code-block-body uzu-scroll"(?:\s[^>]*)?><code class="language-[^"]+">([\s\S]*?)<\/code><\/pre>/g);
+    for (const codeBlock of componentCodeBlocks) {
+      if (codeBlock[1].includes('...') || codeBlock[1].includes('&hellip;')) {
+        report(filePath, `component panel ${id}: demo code should be copyable without ellipsis placeholders`);
+      }
+    }
+    const interfaceCodeCells = componentInterfaceTable.matchAll(/<td><code class="uzu-code">([\s\S]*?)<\/code><\/td>/g);
+    for (const codeCell of interfaceCodeCells) {
+      if (codeCell[1].includes('...') || codeCell[1].includes('&hellip;')) {
+        report(filePath, `component panel ${id}: interface examples should be concrete without ellipsis placeholders`);
+      }
+      const normalizedExample = decodeHtmlEntities(codeCell[1]).replace(/\s+/g, ' ').trim();
+      if (normalizedExample.length > maxInterfaceExampleLength) {
+        report(filePath, `component panel ${id}: interface example is too long for the API table (${normalizedExample.length} characters)`);
+      }
+    }
+    if (id === 'topbar') {
+      if (!panelText.includes('data-uzu-theme-toggle') || !panelText.includes('data-uzu-language-select')) {
+        report(filePath, 'component panel topbar should include the public theme toggle and language selector controls');
+      }
+      for (const required of ['data-uzu-language-trigger', 'data-uzu-language-menu', 'data-uzu-language-option', 'data-uzu-language-value']) {
+        if (!panelText.includes(required)) {
+          report(filePath, `component panel topbar should document the public language selector interface: ${required}`);
+        }
+      }
+      if (!panelText.includes('class="uzu-topbar-actions"') || !panelText.includes('&lt;div class=&quot;uzu-topbar-actions&quot;')) {
+        report(filePath, 'component panel topbar should document and preview the public .uzu-topbar-actions slot');
+      }
+      if (/class="uzu-flex uzu-gap-2"\s+aria-label="(?:Example page settings|Page settings)"/.test(panelText)) {
+        report(filePath, 'component panel topbar should not position page settings with a generic flex row');
+      }
     }
     if (!panelText.includes('uzu-section-head')) report(filePath, `component panel is missing a public section head: ${id}`);
     if (!/<h2 class="uzu-section-title">/.test(panelText)) report(filePath, `component panel is missing a public section title: ${id}`);
     if (!/\buzu-(?:card|callout|popover|alert|dialog|drawer|sheet|hover-card|tooltip|editor|table|data-grid|tree|skeleton|progress|process|step-nav|toast|tag|empty-state|error-state)\b/.test(panelText)) {
       report(filePath, `component panel is missing a static public Usuzumi preview: ${id}`);
     }
-    if (!panelText.includes('Component Docs')) report(filePath, `component panel is missing static docs content: ${id}`);
     if (!/aria-label="Component demo view"/.test(panelText)) report(filePath, `component panel is missing public preview/code tabs: ${id}`);
     if (!/data-uzu-tab-target="#demo-[^"]+-preview"/.test(panelText)) report(filePath, `component panel is missing public preview tab target: ${id}`);
     if (!/data-uzu-tab-target="#demo-[^"]+-code"/.test(panelText)) report(filePath, `component panel is missing public code tab target: ${id}`);
     if (!/id="demo-[^"]+-preview"/.test(panelText)) report(filePath, `component panel is missing public preview panel: ${id}`);
     if (!/id="demo-[^"]+-code"/.test(panelText)) report(filePath, `component panel is missing public code panel: ${id}`);
-    if (!/\buzu-callout\b/.test(panelText)) report(filePath, `component docs are missing public guidance callouts: ${id}`);
-    if (!/<table class="uzu-table">/.test(panelText)) report(filePath, `component docs are missing a public interface table: ${id}`);
-    if (!/\buzu-code-block\b/.test(panelText)) report(filePath, `component docs are missing a public code block: ${id}`);
-    if (!/data-uzu-code-copy/.test(panelText)) report(filePath, `component docs are missing the public code copy control: ${id}`);
+    if (!hasComponentCatalogNotes(panelText)) report(filePath, `component catalog entry is missing a concrete notes heading: ${id}`);
+    if (!/\buzu-callout\b/.test(panelText)) report(filePath, `component catalog entry is missing public guidance callouts: ${id}`);
+    if (!componentInterfaceTable) report(filePath, `component catalog entry is missing a public interface table: ${id}`);
+    else {
+      const interfaceRowCount = (componentInterfaceTable.match(/<tr>/g) || []).length;
+      if (interfaceRowCount > maxComponentInterfaceRows) {
+        report(filePath, `component panel ${id}: interface table is too dense (${interfaceRowCount} rows)`);
+      }
+    }
+    if (!/\buzu-code-block\b/.test(panelText)) report(filePath, `component catalog entry is missing a public code block: ${id}`);
+    if (!/data-uzu-code-copy/.test(panelText)) report(filePath, `component catalog entry is missing the public code copy control: ${id}`);
   }
 }
 
@@ -424,6 +553,7 @@ for (const filePath of walk(root)) {
   checkGuardrails(filePath, text);
   if (extension === '.html') {
     checkHtmlReferences(filePath, text);
+    checkInitialLanguageVisibility(filePath, text);
     checkPublicHtmlClasses(filePath, text);
   }
   if (extension === '.css') checkCssReferences(filePath, text);
